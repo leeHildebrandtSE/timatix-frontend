@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { SERVICE_STATUS, SERVICE_PHASES } from '../utils/constants';
+import { useTheme } from '../../context/ThemeContext';
+import { SERVICE_STATUS, SERVICE_PHASES } from '../../utils/constants';
 
 const StatusBadge = ({ status, variant = 'default', size = 'medium', style }) => {
   const { theme } = useTheme();
