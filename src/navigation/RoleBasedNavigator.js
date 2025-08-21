@@ -1,4 +1,4 @@
-// src/navigation/RoleBasedNavigator.js - Fixed version
+// src/navigation/RoleBasedNavigator.js - Fixed version with all missing screens
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,6 +15,7 @@ import ClientDashboard from '../screens/client/Dashboard';
 import Vehicles from '../screens/client/Vehicles';
 import VehicleDetails from '../screens/client/VehicleDetails';
 import ServiceRequests from '../screens/client/ServiceRequests';
+import CreateServiceRequest from '../screens/client/CreateServiceRequest';
 import Profile from '../screens/client/Profile';
 
 // Mechanic Screens
@@ -26,6 +27,12 @@ import QuoteManagement from '../screens/mechanic/QuoteManagement';
 import AdminDashboard from '../screens/admin/AdminDashboard';
 import SystemOverview from '../screens/admin/SystemOverview';
 import UserManagement from '../screens/admin/UserManagement';
+
+// Shared/Common Screens (create these placeholders)
+import ServiceDetails from '../screens/shared/ServiceDetails';
+import QuoteDetails from '../screens/shared/QuoteDetails';
+import JobDetails from '../screens/shared/JobDetails';
+import CreateQuote from '../screens/shared/CreateQuote';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -166,6 +173,30 @@ const ClientStack = () => {
           headerBackTitle: 'Back'
         }}
       />
+      <Stack.Screen 
+        name="CreateServiceRequest" 
+        component={CreateServiceRequest}
+        options={{ 
+          title: 'Book Service',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="ServiceDetails" 
+        component={ServiceDetails}
+        options={{ 
+          title: 'Service Details',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="QuoteDetails" 
+        component={QuoteDetails}
+        options={{ 
+          title: 'Quote Details',
+          headerBackTitle: 'Back'
+        }}
+      />
     </Stack.Navigator>
   );
 };
@@ -192,6 +223,38 @@ const MechanicStack = () => {
         component={MechanicTabs} 
         options={{ headerShown: false }}
       />
+      <Stack.Screen 
+        name="JobDetails" 
+        component={JobDetails}
+        options={{ 
+          title: 'Job Details',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="CreateQuote" 
+        component={CreateQuote}
+        options={{ 
+          title: 'Create Quote',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="ServiceDetails" 
+        component={ServiceDetails}
+        options={{ 
+          title: 'Service Details',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="QuoteDetails" 
+        component={QuoteDetails}
+        options={{ 
+          title: 'Quote Details',
+          headerBackTitle: 'Back'
+        }}
+      />
     </Stack.Navigator>
   );
 };
@@ -217,6 +280,38 @@ const AdminStack = () => {
         name="AdminTabs" 
         component={AdminTabs} 
         options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="SystemOverview" 
+        component={SystemOverview}
+        options={{ 
+          title: 'System Overview',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="UserManagement" 
+        component={UserManagement}
+        options={{ 
+          title: 'User Management',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="ServiceDetails" 
+        component={ServiceDetails}
+        options={{ 
+          title: 'Service Details',
+          headerBackTitle: 'Back'
+        }}
+      />
+      <Stack.Screen 
+        name="QuoteDetails" 
+        component={QuoteDetails}
+        options={{ 
+          title: 'Quote Details',
+          headerBackTitle: 'Back'
+        }}
       />
     </Stack.Navigator>
   );
