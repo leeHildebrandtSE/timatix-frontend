@@ -1,6 +1,8 @@
+// src/navigation/RoleBasedNavigator.js - Fixed version
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -25,23 +27,20 @@ import AdminDashboard from '../screens/admin/AdminDashboard';
 import SystemOverview from '../screens/admin/SystemOverview';
 import UserManagement from '../screens/admin/UserManagement';
 
-// Workshop Screens
-import WorkshopDashboard from '../screens/workshop/WorkshopDashboard';
-
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab Icons (using emoji for simplicity - replace with actual icons)
+// Tab Icons (using emoji for simplicity)
 const getTabIcon = (routeName, focused) => {
   const icons = {
-    Dashboard: focused ? '🏠' : '🏠',
-    Vehicles: focused ? '🚗' : '🚗',
-    ServiceRequests: focused ? '🔧' : '🔧',
-    Jobs: focused ? '🔧' : '🔧',
-    Quotes: focused ? '💰' : '💰',
-    Users: focused ? '👥' : '👥',
-    System: focused ? '⚙️' : '⚙️',
-    Profile: focused ? '👤' : '👤',
+    Dashboard: '🏠',
+    Vehicles: '🚗',
+    ServiceRequests: '🔧',
+    Jobs: '🔧',
+    Quotes: '💰',
+    Users: '👥',
+    System: '⚙️',
+    Profile: '👤',
   };
   return icons[routeName] || '•';
 };
@@ -69,7 +68,11 @@ const ClientTabs = () => {
     >
       <Tab.Screen name="Dashboard" component={ClientDashboard} />
       <Tab.Screen name="Vehicles" component={Vehicles} />
-      <Tab.Screen name="ServiceRequests" component={ServiceRequests} options={{ title: 'Services' }} />
+      <Tab.Screen 
+        name="ServiceRequests" 
+        component={ServiceRequests} 
+        options={{ title: 'Services' }} 
+      />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
@@ -163,7 +166,6 @@ const ClientStack = () => {
           headerBackTitle: 'Back'
         }}
       />
-      {/* Add more detail screens here */}
     </Stack.Navigator>
   );
 };
@@ -190,7 +192,6 @@ const MechanicStack = () => {
         component={MechanicTabs} 
         options={{ headerShown: false }}
       />
-      {/* Add detail screens here */}
     </Stack.Navigator>
   );
 };
@@ -217,7 +218,6 @@ const AdminStack = () => {
         component={AdminTabs} 
         options={{ headerShown: false }}
       />
-      {/* Add detail screens here */}
     </Stack.Navigator>
   );
 };
