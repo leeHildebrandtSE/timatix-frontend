@@ -1,80 +1,273 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
-// Context
-import { AuthContext } from '../context/AuthContext';
-
-// Screens
+// Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+
+// Client Screens
 import ClientDashboard from '../screens/client/Dashboard';
-import WorkshopDashboard from '../screens/workshop/WorkshopDashboard';
+import Vehicles from '../screens/client/Vehicles';
+import VehicleDetails from '../screens/client/VehicleDetails';
+import ServiceRequests from '../screens/client/ServiceRequests';
+import Profile from '../screens/client/Profile';
+
+// Mechanic Screens
+import MechanicDashboard from '../screens/mechanic/MechanicDashboard';
+import JobList from '../screens/mechanic/JobList';
+import QuoteManagement from '../screens/mechanic/QuoteManagement';
+
+// Admin Screens
 import AdminDashboard from '../screens/admin/AdminDashboard';
+import SystemOverview from '../screens/admin/SystemOverview';
+import UserManagement from '../screens/admin/UserManagement';
+
+// Workshop Screens
+import WorkshopDashboard from '../screens/workshop/WorkshopDashboard';
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
-const RoleBasedNavigator = () => {
-  const { user } = useContext(AuthContext);
+// Tab Icons (using emoji for simplicity - replace with actual icons)
+const getTabIcon = (routeName, focused) => {
+  const icons = {
+    Dashboard: focused ? '🏠' : '🏠',
+    Vehicles: focused ? '🚗' : '🚗',
+    ServiceRequests: focused ? '🔧' : '🔧',
+    Jobs: focused ? '🔧' : '🔧',
+    Quotes: focused ? '💰' : '💰',
+    Users: focused ? '👥' : '👥',
+    System: focused ? '⚙️' : '⚙️',
+    Profile: focused ? '👤' : '👤',
+  };
+  return icons[routeName] || '•';
+};
 
-  // Determine initial route based on role
-  let initialRouteName;
-  let screens = [];
+// Client Tab Navigator
+const ClientTabs = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => (
+          <Text style={{ fontSize: 24 }}>
+            {getTabIcon(route.name, focused)}
+          </Text>
+        ),
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+        },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={ClientDashboard} />
+      <Tab.Screen name="Vehicles" component={Vehicles} />
+      <Tab.Screen name="ServiceRequests" component={ServiceRequests} options={{ title: 'Services' }} />
+      <Tab.Screen name="Profile" component={Profile} />
+    </Tab.Navigator>
+  );
+};
 
-  if (!user) {
-    initialRouteName = 'Login';
-    screens = [
-      { name: 'Login', component: LoginScreen },
-      { name: 'Register', component: RegisterScreen },
-    ];
-  } else {
-    switch (user.role) {
-      case 'CLIENT':
-        initialRouteName = 'ClientDashboard';
-        screens = [
-          { name: 'ClientDashboard', component: ClientDashboard },
-          // add other client screens here
-        ];
-        break;
+// Mechanic Tab Navigator
+const MechanicTabs = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => (
+          <Text style={{ fontSize: 24 }}>
+            {getTabIcon(route.name, focused)}
+          </Text>
+        ),
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+        },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={MechanicDashboard} />
+      <Tab.Screen name="Jobs" component={JobList} />
+      <Tab.Screen name="Quotes" component={QuoteManagement} />
+      <Tab.Screen name="Profile" component={Profile} />
+    </Tab.Navigator>
+  );
+};
 
-      case 'MECHANIC':
-        initialRouteName = 'WorkshopDashboard';
-        screens = [
-          { name: 'WorkshopDashboard', component: WorkshopDashboard },
-          // add other mechanic screens here
-        ];
-        break;
+// Admin Tab Navigator
+const AdminTabs = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => (
+          <Text style={{ fontSize: 24 }}>
+            {getTabIcon(route.name, focused)}
+          </Text>
+        ),
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+        },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={AdminDashboard} />
+      <Tab.Screen name="System" component={SystemOverview} />
+      <Tab.Screen name="Users" component={UserManagement} />
+      <Tab.Screen name="Profile" component={Profile} />
+    </Tab.Navigator>
+  );
+};
 
-      case 'ADMIN':
-        initialRouteName = 'AdminDashboard';
-        screens = [
-          { name: 'AdminDashboard', component: AdminDashboard },
-          // add other admin screens here
-        ];
-        break;
-
-      default:
-        initialRouteName = 'Login';
-        screens = [
-          { name: 'Login', component: LoginScreen },
-        ];
-        break;
-    }
-  }
-
+// Client Stack Navigator
+const ClientStack = () => {
+  const { theme } = useTheme();
+  
   return (
     <Stack.Navigator
-      initialRouteName={initialRouteName}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+          borderBottomColor: theme.colors.border,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+      }}
     >
-      {screens.map(screen => (
-        <Stack.Screen
-          key={screen.name}
-          name={screen.name}
-          component={screen.component}
-        />
-      ))}
+      <Stack.Screen 
+        name="ClientTabs" 
+        component={ClientTabs} 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="VehicleDetails" 
+        component={VehicleDetails}
+        options={{ 
+          title: 'Vehicle Details',
+          headerBackTitle: 'Back'
+        }}
+      />
+      {/* Add more detail screens here */}
     </Stack.Navigator>
   );
+};
+
+// Mechanic Stack Navigator
+const MechanicStack = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+          borderBottomColor: theme.colors.border,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+      }}
+    >
+      <Stack.Screen 
+        name="MechanicTabs" 
+        component={MechanicTabs} 
+        options={{ headerShown: false }}
+      />
+      {/* Add detail screens here */}
+    </Stack.Navigator>
+  );
+};
+
+// Admin Stack Navigator
+const AdminStack = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+          borderBottomColor: theme.colors.border,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+      }}
+    >
+      <Stack.Screen 
+        name="AdminTabs" 
+        component={AdminTabs} 
+        options={{ headerShown: false }}
+      />
+      {/* Add detail screens here */}
+    </Stack.Navigator>
+  );
+};
+
+// Auth Stack Navigator
+const AuthStack = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        cardStyle: { backgroundColor: theme.colors.background },
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Main Role-Based Navigator
+const RoleBasedNavigator = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return null; // Or a loading screen component
+  }
+
+  // If not authenticated, show auth stack
+  if (!isAuthenticated || !user) {
+    return <AuthStack />;
+  }
+
+  // Route based on user role
+  switch (user.role) {
+    case 'CLIENT':
+      return <ClientStack />;
+    
+    case 'MECHANIC':
+      return <MechanicStack />;
+    
+    case 'ADMIN':
+      return <AdminStack />;
+    
+    default:
+      // Fallback to auth if role is not recognized
+      return <AuthStack />;
+  }
 };
 
 export default RoleBasedNavigator;
