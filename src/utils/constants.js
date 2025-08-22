@@ -1,19 +1,33 @@
-// src/utils/constants.js - Updated API Configuration
+// src/utils/constants.js - FIXED for Physical Device Testing
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 // Get the correct base URL based on platform and environment
 const getBaseURL = () => {
   if (__DEV__) {
     // Development environment
-    if (Platform.OS === 'android') {
+    console.log('🔍 Device Info:', {
+      platform: Platform.OS,
+      isDevice: Constants.isDevice,
+      deviceName: Constants.deviceName
+    });
+
+    if (Platform.OS === 'android' && !Constants.isDevice) {
       // Android emulator uses 10.0.2.2 to access host machine's localhost
+      console.log('🤖 Using Android Emulator URL');
       return 'http://10.0.2.2:8081/api';
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === 'ios' && !Constants.isDevice) {
       // iOS simulator can use localhost directly
+      console.log('🍎 Using iOS Simulator URL');
+      return 'http://localhost:8081/api';
+    } else if (typeof window !== 'undefined' && window.location) {
+      // Web platform
+      console.log('🌐 Using Web URL');
       return 'http://localhost:8081/api';
     } else {
-      // Web platform
-      return 'http://localhost:8081/api';
+      // Physical device - use computer's network IP
+      console.log('📱 Using Physical Device URL');
+      return 'http://192.168.18.7:8081/api';
     }
   } else {
     // Production environment - replace with your actual production API URL
@@ -24,40 +38,22 @@ const getBaseURL = () => {
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: getBaseURL(),
-  TIMEOUT: 10000,
+  TIMEOUT: 15000, // Increased for development
   RETRY_ATTEMPTS: 3,
 };
 
-// Alternative: Manual configuration if you know your setup
-// Uncomment and modify the appropriate line below:
+// Log the configuration for debugging
+console.log('🔗 API Configuration:', {
+  BASE_URL: API_CONFIG.BASE_URL,
+  PLATFORM: Platform.OS,
+  IS_DEVICE: Constants.isDevice,
+  EXPO_DEV: __DEV__
+});
 
-// For Android Emulator:
-// export const API_CONFIG = {
-//   BASE_URL: 'http://10.0.2.2:8081/api',
-//   TIMEOUT: 10000,
-//   RETRY_ATTEMPTS: 3,
-// };
-
-// For iOS Simulator:
-// export const API_CONFIG = {
-//   BASE_URL: 'http://localhost:8081/api',
-//   TIMEOUT: 10000,
-//   RETRY_ATTEMPTS: 3,
-// };
-
-// For Physical Device (replace with your computer's IP):
-// export const API_CONFIG = {
-//   BASE_URL: 'http://192.168.18.7:8081/api',  // Your computer's local IP
-//   TIMEOUT: 10000,
-//   RETRY_ATTEMPTS: 3,
-// };
-
-// For Expo Web:
-// export const API_CONFIG = {
-//   BASE_URL: 'http://localhost:8081/api',
-//   TIMEOUT: 10000,
-//   RETRY_ATTEMPTS: 3,
-// };
+// Test URLs for manual verification
+console.log('🧪 Test these URLs in your browser:');
+console.log('💻 Local:', 'http://localhost:8081/api/actuator/health');
+console.log('📱 Mobile:', 'http://192.168.18.7:8081/api/actuator/health');
 
 // User Roles
 export const USER_ROLES = {
@@ -160,7 +156,7 @@ export const ROUTES = {
   PROFILE: 'Profile',
 };
 
-// Demo Credentials
+// Demo Credentials - Updated with real test accounts
 export const DEMO_CREDENTIALS = {
   CLIENT: {
     email: 'john.doe@email.com',
@@ -174,6 +170,28 @@ export const DEMO_CREDENTIALS = {
     email: 'admin@timatix.com',
     password: 'admin123',
   },
+};
+
+// Additional test accounts from your backend
+export const TEST_ACCOUNTS = {
+  ADMINS: [
+    'admin@timatix.com',
+    'manager@timatix.com'
+  ],
+  MECHANICS: [
+    'mike@timatix.com',
+    'sarah@timatix.com',
+    'david.mechanic@timatix.com',
+    'lisa@timatix.com'
+  ],
+  CLIENTS: [
+    'john.doe@email.com',
+    'emma.brown@email.com',
+    'alex.taylor@email.com',
+    'michael.smith@email.com',
+    'jessica.wilson@email.com',
+    'robert.davis@email.com'
+  ]
 };
 
 // Form Validation
@@ -229,6 +247,7 @@ export default {
   STORAGE_KEYS,
   ROUTES,
   DEMO_CREDENTIALS,
+  TEST_ACCOUNTS,
   VALIDATION_RULES,
   TIME_FORMATS,
   ERROR_MESSAGES,
