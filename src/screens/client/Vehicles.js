@@ -18,6 +18,7 @@ import VehicleForm from '../../components/forms/VehicleForm';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { vehiclesService } from '../../services/vehicles';
+import ForceLogout from '../../components/debug/ForceLogout';
 
 const Vehicles = ({ navigation }) => {
   const { user } = useAuth();

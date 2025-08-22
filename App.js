@@ -1,12 +1,14 @@
-// App.js - Updated with ErrorProvider
-import React from 'react';
+// App.js - Emergency fix with global error handler
+import React, { useEffect } from 'react';
 import { StatusBar, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// Import the global error handler FIRST
+import { globalErrorHandler } from './src/utils/errorHandler';
+
 // Context Providers
-import { ErrorProvider } from './src/context/ErrorContext'; // Add this line
 import { ThemeProvider } from './src/context/ThemeContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { AppProvider } from './src/context/AppContext';
@@ -17,32 +19,40 @@ import RoleBasedNavigator from './src/navigation/RoleBasedNavigator';
 const Stack = createStackNavigator();
 
 const App = () => {
+  // Set up global error handler immediately
+  useEffect(() => {
+    // Make clearError available globally to prevent navigation crashes
+    if (!global.clearError) {
+      global.clearError = globalErrorHandler.clearError;
+      console.log('🛡️ Global clearError handler installed');
+    }
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <ErrorProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppProvider>
-              <NavigationContainer
-                onError={(error) => {
-                  console.error('🚨 Navigation Error:', error);
-                  // Don't crash the app, just log the error
-                }}
-                onStateChange={(state) => {
-                  console.log('📍 Navigation state changed');
-                }}
-              >
-                <StatusBar 
-                  barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} 
-                  backgroundColor="#FFFFFF" 
-                  translucent={false}
-                />
-                <RootNavigator />
-              </NavigationContainer>
-            </AppProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </ErrorProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppProvider>
+            <NavigationContainer
+              onError={(error) => {
+                console.error('🚨 Navigation Error:', error);
+                // Use global error handler instead of crashing
+                globalErrorHandler.showError(error.message);
+              }}
+              onStateChange={(state) => {
+                console.log('📍 Navigation state changed');
+              }}
+            >
+              <StatusBar 
+                barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} 
+                backgroundColor="#FFFFFF" 
+                translucent={false}
+              />
+              <RootNavigator />
+            </NavigationContainer>
+          </AppProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 };

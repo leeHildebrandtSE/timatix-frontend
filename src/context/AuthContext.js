@@ -1,4 +1,4 @@
-// src/context/AuthContext.js
+// src/context/AuthContext.js - Updated with clearError function
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { STORAGE_KEYS } from '../utils/constants';
@@ -17,6 +17,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // For login/logout operations
+  const [error, setError] = useState(null); // Add error state
 
   // Generate a properly formatted JWT demo token
   const createDemoJWT = () => {
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }) => {
   const checkAuthState = async () => {
     try {
       console.log('🔍 Checking authentication state...');
+      setLoading(true);
       
       const storedToken = await storageService.get(STORAGE_KEYS.USER_TOKEN);
       const storedUser = await storageService.get(STORAGE_KEYS.USER_DATA);
@@ -67,53 +70,160 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('💥 Error checking auth state:', error);
+      setError('Failed to check authentication state');
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password) => {
-    try {
-      console.log('🔐 Attempting login for:', email);
-      
-      // Demo mode - accept any credentials
-      if (email && password) {
-        const demoToken = createDemoJWT();
-        const demoUser = {
-          id: 1,
-          email: email,
-          name: 'Demo User',
-          role: 'USER'
-        };
+  const register = async (formData) => {
+  try {
+    setIsLoading(true);
+    setError(null);
 
-        console.log('🎭 Demo login successful:', {
-          email: demoUser.email,
-          tokenLength: demoToken.length,
-          tokenPreview: demoToken.substring(0, 50) + '...'
-        });
+    const response = await fetch("http://192.168.18.7:8081/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-        // Store in state
-        setUser(demoUser);
-        setToken(demoToken);
-
-        // Store in AsyncStorage
-        await storageService.set(STORAGE_KEYS.USER_TOKEN, demoToken);
-        await storageService.set(STORAGE_KEYS.USER_DATA, demoUser);
-
-        console.log('✅ Demo authentication stored');
-        return { success: true, user: demoUser };
-      } else {
-        throw new Error('Email and password are required');
-      }
-    } catch (error) {
-      console.error('💥 Login error:', error);
-      return { success: false, error: error.message };
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Registration failed");
     }
+
+    const data = await response.json();
+    console.log("✅ Registration success:", data);
+
+    return data;
+  } catch (error) {
+    console.error("💥 Registration error:", error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+  const clearError = () => {
+    console.log('🧹 Clearing auth error');
+    setError(null);
   };
+
+  const setAuthError = (errorMessage) => {
+    console.log('🚨 Setting auth error:', errorMessage);
+    setError(errorMessage);
+  };
+
+  const login = async (credentials) => {
+  try {
+    console.log('🔐 Attempting login for:', credentials.email);
+    setIsLoading(true);
+    setError(null);
+
+    const { email, password } = credentials;
+
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
+
+    // Call your backend login API
+    const response = await fetch("http://192.168.18.7:8081/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("❌ Login failed:", errorData);
+      throw new Error(errorData.message || "Invalid credentials");
+    }
+
+    const data = await response.json();
+    console.log("✅ Login response:", data);
+
+    // Your backend should return { token, user } or similar
+    const { token, user } = data;
+
+    if (!token) {
+      throw new Error("No token received from server");
+    }
+
+    // Save to state
+    setUser(user);
+    setToken(token);
+
+    // Save to AsyncStorage
+    await storageService.set(STORAGE_KEYS.USER_TOKEN, token);
+    await storageService.set(STORAGE_KEYS.USER_DATA, user);
+
+    console.log("✅ Authentication stored");
+    return { success: true, user };
+  } catch (error) {
+    console.error("💥 Login error:", error);
+    setError(error.message);
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+  // const login = async (credentials) => {
+  //   try {
+  //     console.log('🔐 Attempting login for:', credentials.email);
+  //     setIsLoading(true);
+  //     setError(null);
+      
+  //     const { email, password } = credentials;
+      
+  //     // Demo mode - accept any credentials
+  //     if (email && password) {
+  //       const demoToken = createDemoJWT();
+  //       const demoUser = {
+  //         id: 1,
+  //         email: email,
+  //         name: 'Demo User',
+  //         role: 'USER'
+  //       };
+
+  //       console.log('🎭 Demo login successful:', {
+  //         email: demoUser.email,
+  //         tokenLength: demoToken.length,
+  //         tokenPreview: demoToken.substring(0, 50) + '...'
+  //       });
+
+  //       // Store in state
+  //       setUser(demoUser);
+  //       setToken(demoToken);
+
+  //       // Store in AsyncStorage
+  //       await storageService.set(STORAGE_KEYS.USER_TOKEN, demoToken);
+  //       await storageService.set(STORAGE_KEYS.USER_DATA, demoUser);
+
+  //       console.log('✅ Demo authentication stored');
+  //       return { success: true, user: demoUser };
+  //     } else {
+  //       throw new Error('Email and password are required');
+  //     }
+  //   } catch (error) {
+  //     console.error('💥 Login error:', error);
+  //     setError(error.message);
+  //     throw error; // Re-throw so calling component can handle it
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const logout = async () => {
     try {
       console.log('🚪 Logging out...');
+      setIsLoading(true);
+      setError(null);
       
       // Clear state
       setUser(null);
@@ -126,6 +236,9 @@ export const AuthProvider = ({ children }) => {
       console.log('✅ Logout successful');
     } catch (error) {
       console.error('💥 Logout error:', error);
+      setError('Failed to logout');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -134,14 +247,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = {
-    user,
-    token,
-    loading,
-    login,
-    logout,
-    isAuthenticated: isAuthenticated(),
-    checkAuthState
-  };
+  user,
+  token,
+  loading,
+  isLoading,
+  error,
+  login,
+  register,   // 👈 make it available
+  logout,
+  clearError,
+  setError: setAuthError,
+  isAuthenticated: isAuthenticated(),
+  checkAuthState
+};
+
 
   return (
     <AuthContext.Provider value={value}>
