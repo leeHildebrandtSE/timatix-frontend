@@ -1,249 +1,146 @@
-// src/context/AuthContext.js - Fixed version
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { authService } from '../services/auth';
+// src/context/AuthContext.js
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { STORAGE_KEYS } from '../utils/constants';
 
-// Initial state
-const initialState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  error: null,
-};
-
-// Action types
-const AUTH_ACTIONS = {
-  LOGIN_START: 'LOGIN_START',
-  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
-  LOGIN_FAILURE: 'LOGIN_FAILURE',
-  LOGOUT: 'LOGOUT',
-  REGISTER_START: 'REGISTER_START',
-  REGISTER_SUCCESS: 'REGISTER_SUCCESS',
-  REGISTER_FAILURE: 'REGISTER_FAILURE',
-  RESTORE_SESSION: 'RESTORE_SESSION',
-  SET_LOADING: 'SET_LOADING',
-  CLEAR_ERROR: 'CLEAR_ERROR',
-  UPDATE_USER: 'UPDATE_USER',
-};
-
-// Reducer
-const authReducer = (state, action) => {
-  switch (action.type) {
-    case AUTH_ACTIONS.LOGIN_START:
-    case AUTH_ACTIONS.REGISTER_START:
-      return {
-        ...state,
-        isLoading: true,
-        error: null,
-      };
-
-    case AUTH_ACTIONS.LOGIN_SUCCESS:
-    case AUTH_ACTIONS.REGISTER_SUCCESS:
-      return {
-        ...state,
-        user: action.payload.user,
-        token: action.payload.token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      };
-
-    case AUTH_ACTIONS.LOGIN_FAILURE:
-    case AUTH_ACTIONS.REGISTER_FAILURE:
-      return {
-        ...state,
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: action.payload,
-      };
-
-    case AUTH_ACTIONS.LOGOUT:
-      return {
-        ...initialState,
-        isLoading: false,
-      };
-
-    case AUTH_ACTIONS.RESTORE_SESSION:
-      return {
-        ...state,
-        user: action.payload.user,
-        token: action.payload.token,
-        isAuthenticated: true,
-        isLoading: false,
-      };
-
-    case AUTH_ACTIONS.SET_LOADING:
-      return {
-        ...state,
-        isLoading: action.payload,
-      };
-
-    case AUTH_ACTIONS.CLEAR_ERROR:
-      return {
-        ...state,
-        error: null,
-      };
-
-    case AUTH_ACTIONS.UPDATE_USER:
-      return {
-        ...state,
-        user: { ...state.user, ...action.payload },
-      };
-
-    default:
-      return state;
-  }
-};
-
-// Create context
 const AuthContext = createContext();
 
-// Auth provider component
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
 export const AuthProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Restore session on app start - using useCallback to prevent infinite loops
-  const restoreSession = useCallback(async () => {
-    try {
-      dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
-      
-      const token = await storageService.get(STORAGE_KEYS.USER_TOKEN);
-      const userData = await storageService.get(STORAGE_KEYS.USER_DATA);
-      
-      if (token && userData) {
-        // For demo purposes, always validate token as true
-        const isValid = token.startsWith('demo_') ? true : await authService.validateToken(token);
-        
-        if (isValid) {
-          dispatch({
-            type: AUTH_ACTIONS.RESTORE_SESSION,
-            payload: {
-              user: userData,
-              token: token,
-            },
-          });
-        } else {
-          // Clear invalid session
-          await storageService.remove(STORAGE_KEYS.USER_TOKEN);
-          await storageService.remove(STORAGE_KEYS.USER_DATA);
-          dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
-        }
-      } else {
-        dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
-      }
-    } catch (error) {
-      console.error('Error restoring session:', error);
-      dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
-    }
-  }, []); // Empty dependency array
+  // Generate a properly formatted JWT demo token
+  const createDemoJWT = () => {
+    // Demo JWT header (base64 encoded)
+    const header = btoa(JSON.stringify({
+      "alg": "HS256",
+      "typ": "JWT"
+    }));
 
-  // Run restore session only once on mount
+    // Demo JWT payload (base64 encoded)
+    const payload = btoa(JSON.stringify({
+      "sub": "demo@example.com",
+      "email": "demo@example.com",
+      "role": "USER",
+      "iat": Math.floor(Date.now() / 1000),
+      "exp": Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+    }));
+
+    // Demo signature (this won't be validated by backend in demo mode)
+    const signature = btoa("demo-signature-not-validated");
+
+    return `${header}.${payload}.${signature}`;
+  };
+
   useEffect(() => {
-    restoreSession();
-  }, []); // Empty dependency array
-
-  const login = useCallback(async (credentials) => {
-    try {
-      dispatch({ type: AUTH_ACTIONS.LOGIN_START });
-      
-      const response = await authService.login(credentials);
-      
-      // Store token and user data
-      await storageService.set(STORAGE_KEYS.USER_TOKEN, response.token);
-      await storageService.set(STORAGE_KEYS.USER_DATA, response.user);
-      
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_SUCCESS,
-        payload: {
-          user: response.user,
-          token: response.token,
-        },
-      });
-      
-      return response;
-    } catch (error) {
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_FAILURE,
-        payload: error.message || 'Login failed',
-      });
-      throw error;
-    }
+    checkAuthState();
   }, []);
 
-  const register = useCallback(async (userData) => {
+  const checkAuthState = async () => {
     try {
-      dispatch({ type: AUTH_ACTIONS.REGISTER_START });
+      console.log('🔍 Checking authentication state...');
       
-      const response = await authService.register(userData);
+      const storedToken = await storageService.get(STORAGE_KEYS.USER_TOKEN);
+      const storedUser = await storageService.get(STORAGE_KEYS.USER_DATA);
       
-      // Store token and user data
-      await storageService.set(STORAGE_KEYS.USER_TOKEN, response.token);
-      await storageService.set(STORAGE_KEYS.USER_DATA, response.user);
-      
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_SUCCESS,
-        payload: {
-          user: response.user,
-          token: response.token,
-        },
+      console.log('📦 Storage check:', {
+        hasToken: !!storedToken,
+        hasUser: !!storedUser,
+        tokenType: storedToken ? 'stored' : 'none'
       });
-      
-      return response;
-    } catch (error) {
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_FAILURE,
-        payload: error.message || 'Registration failed',
-      });
-      throw error;
-    }
-  }, []);
 
-  const logout = useCallback(async () => {
-    try {
-      // Call logout API if needed
-      if (state.token) {
-        await authService.logout(state.token);
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(storedUser);
+        console.log('✅ Restored authentication from storage');
+      } else {
+        console.log('❌ No valid authentication found');
       }
     } catch (error) {
-      console.error('Logout API error:', error);
+      console.error('💥 Error checking auth state:', error);
     } finally {
-      // Always clear local storage and state
+      setLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      console.log('🔐 Attempting login for:', email);
+      
+      // Demo mode - accept any credentials
+      if (email && password) {
+        const demoToken = createDemoJWT();
+        const demoUser = {
+          id: 1,
+          email: email,
+          name: 'Demo User',
+          role: 'USER'
+        };
+
+        console.log('🎭 Demo login successful:', {
+          email: demoUser.email,
+          tokenLength: demoToken.length,
+          tokenPreview: demoToken.substring(0, 50) + '...'
+        });
+
+        // Store in state
+        setUser(demoUser);
+        setToken(demoToken);
+
+        // Store in AsyncStorage
+        await storageService.set(STORAGE_KEYS.USER_TOKEN, demoToken);
+        await storageService.set(STORAGE_KEYS.USER_DATA, demoUser);
+
+        console.log('✅ Demo authentication stored');
+        return { success: true, user: demoUser };
+      } else {
+        throw new Error('Email and password are required');
+      }
+    } catch (error) {
+      console.error('💥 Login error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      console.log('🚪 Logging out...');
+      
+      // Clear state
+      setUser(null);
+      setToken(null);
+
+      // Clear storage
       await storageService.remove(STORAGE_KEYS.USER_TOKEN);
       await storageService.remove(STORAGE_KEYS.USER_DATA);
-      dispatch({ type: AUTH_ACTIONS.LOGOUT });
+
+      console.log('✅ Logout successful');
+    } catch (error) {
+      console.error('💥 Logout error:', error);
     }
-  }, [state.token]);
+  };
 
-  const updateUser = useCallback((userData) => {
-    dispatch({
-      type: AUTH_ACTIONS.UPDATE_USER,
-      payload: userData,
-    });
-    
-    // Update stored user data
-    const updatedUser = { ...state.user, ...userData };
-    storageService.set(STORAGE_KEYS.USER_DATA, updatedUser);
-  }, [state.user]);
-
-  const clearError = useCallback(() => {
-    dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
-  }, []);
+  const isAuthenticated = () => {
+    return !!(user && token);
+  };
 
   const value = {
-    // State
-    ...state,
-    
-    // Actions
+    user,
+    token,
+    loading,
     login,
-    register,
     logout,
-    updateUser,
-    clearError,
-    restoreSession,
+    isAuthenticated: isAuthenticated(),
+    checkAuthState
   };
 
   return (
@@ -252,16 +149,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-// Custom hook to use auth context
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  
-  return context;
-};
-
-export default AuthContext;
