@@ -1,9 +1,9 @@
-// src/context/AppContext.js - Fixed version with proper dependency management
+// src/context/AppContext.js - Enhanced version with better error handling
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { SERVICE_STATUS } from '../utils/constants';
 
-// Initial state with mock data
+// Your existing initialState and mock data generators remain the same...
 const initialState = {
   vehicles: [],
   serviceRequests: [],
@@ -16,7 +16,7 @@ const initialState = {
   initialized: false,
 };
 
-// Mock data generators
+// All your existing mock data generators (keeping them as-is)
 const generateMockVehicles = (userId) => [
   {
     id: '1',
@@ -131,14 +131,13 @@ const generateMockServiceRequests = (userId, userRole) => {
     },
   ];
 
-  // Filter requests based on user role
   if (userRole === 'CLIENT') {
     return baseRequests.filter(req => req.userId === userId);
   } else if (userRole === 'MECHANIC') {
     return baseRequests.filter(req => req.assignedMechanic?.id === userId);
   }
   
-  return baseRequests; // Admin sees all
+  return baseRequests;
 };
 
 const generateMockUsers = () => [
@@ -186,7 +185,7 @@ const generateMockNotifications = (userId) => [
   },
 ];
 
-// Action types
+// Your existing action types remain the same...
 const APP_ACTIONS = {
   SET_LOADING: 'SET_LOADING',
   SET_ERROR: 'SET_ERROR',
@@ -219,7 +218,7 @@ const APP_ACTIONS = {
   CLEAR_NOTIFICATIONS: 'CLEAR_NOTIFICATIONS',
 };
 
-// Reducer
+// Your existing reducer remains the same...
 const appReducer = (state, action) => {
   switch (action.type) {
     case APP_ACTIONS.SET_LOADING:
@@ -242,6 +241,12 @@ const appReducer = (state, action) => {
       };
 
     case APP_ACTIONS.INITIALIZE_MOCK_DATA:
+      console.log('🎭 Initializing mock data:', {
+        vehicles: action.payload.vehicles?.length || 0,
+        serviceRequests: action.payload.serviceRequests?.length || 0,
+        users: action.payload.users?.length || 0,
+        notifications: action.payload.notifications?.length || 0,
+      });
       return {
         ...state,
         vehicles: action.payload.vehicles || [],
@@ -253,9 +258,10 @@ const appReducer = (state, action) => {
       };
 
     case APP_ACTIONS.RESET_STATE:
+      console.log('🔄 Resetting app state');
       return initialState;
 
-    // Vehicles
+    // All your existing cases remain the same...
     case APP_ACTIONS.SET_VEHICLES:
       return {
         ...state,
@@ -282,7 +288,6 @@ const appReducer = (state, action) => {
         vehicles: (state.vehicles || []).filter(vehicle => vehicle.id !== action.payload),
       };
 
-    // Service Requests
     case APP_ACTIONS.SET_SERVICE_REQUESTS:
       return {
         ...state,
@@ -309,7 +314,6 @@ const appReducer = (state, action) => {
         serviceRequests: (state.serviceRequests || []).filter(request => request.id !== action.payload),
       };
 
-    // Users
     case APP_ACTIONS.SET_USERS:
       return {
         ...state,
@@ -336,7 +340,6 @@ const appReducer = (state, action) => {
         users: (state.users || []).filter(user => user.id !== action.payload),
       };
 
-    // Notifications
     case APP_ACTIONS.SET_NOTIFICATIONS:
       return {
         ...state,
@@ -368,59 +371,88 @@ const appReducer = (state, action) => {
   }
 };
 
-// Create context
 const AppContext = createContext();
 
-// App provider component
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { isAuthenticated, user } = useAuth();
 
-  // Initialize mock data - use useCallback to prevent re-creation
+  // Initialize mock data - enhanced with better logging
   const initializeMockData = useCallback((userData) => {
-    if (!userData) return;
+    if (!userData) {
+      console.log('⚠️ No user data provided for mock initialization');
+      return;
+    }
 
-    const mockVehicles = userData.role === 'CLIENT' ? generateMockVehicles(userData.id) : [];
-    const mockServiceRequests = generateMockServiceRequests(userData.id, userData.role);
-    const mockUsers = generateMockUsers();
-    const mockNotifications = generateMockNotifications(userData.id);
-
-    dispatch({
-      type: APP_ACTIONS.INITIALIZE_MOCK_DATA,
-      payload: {
-        vehicles: mockVehicles,
-        serviceRequests: mockServiceRequests,
-        users: mockUsers,
-        notifications: mockNotifications,
-      },
+    console.log('🎭 Initializing mock data for user:', {
+      id: userData.id,
+      email: userData.email,
+      role: userData.role
     });
+
+    try {
+      const mockVehicles = userData.role === 'CLIENT' ? generateMockVehicles(userData.id) : [];
+      const mockServiceRequests = generateMockServiceRequests(userData.id, userData.role);
+      const mockUsers = generateMockUsers();
+      const mockNotifications = generateMockNotifications(userData.id);
+
+      dispatch({
+        type: APP_ACTIONS.INITIALIZE_MOCK_DATA,
+        payload: {
+          vehicles: mockVehicles,
+          serviceRequests: mockServiceRequests,
+          users: mockUsers,
+          notifications: mockNotifications,
+        },
+      });
+
+      console.log('✅ Mock data initialized successfully');
+    } catch (error) {
+      console.error('💥 Error initializing mock data:', error);
+      dispatch({
+        type: APP_ACTIONS.SET_ERROR,
+        payload: `Failed to initialize data: ${error.message}`
+      });
+    }
   }, []);
 
-  // Initialize data when user changes - but only once per user
+  // Initialize data when user changes
   useEffect(() => {
+    console.log('🔍 AppContext useEffect triggered:', {
+      isAuthenticated,
+      hasUser: !!user,
+      initialized: state.initialized,
+      userRole: user?.role
+    });
+
     if (isAuthenticated && user && !state.initialized) {
+      console.log('🚀 Triggering mock data initialization...');
       initializeMockData(user);
     }
   }, [isAuthenticated, user, state.initialized, initializeMockData]);
 
   // Reset state when user logs out
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && state.initialized) {
+      console.log('👋 User logged out, resetting app state');
       dispatch({ type: APP_ACTIONS.RESET_STATE });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, state.initialized]);
 
-  // Memoized action creators to prevent re-renders
-  const setLoading = useCallback((loading) => {
-    dispatch({ type: APP_ACTIONS.SET_LOADING, payload: loading });
-  }, []);
-
+  // Enhanced error handling with logging
   const setError = useCallback((error) => {
+    console.error('🚨 AppContext Error:', error);
     dispatch({ type: APP_ACTIONS.SET_ERROR, payload: error });
   }, []);
 
   const clearError = useCallback(() => {
+    console.log('🧹 Clearing AppContext error');
     dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
+  }, []);
+
+  // All your existing action creators remain the same...
+  const setLoading = useCallback((loading) => {
+    dispatch({ type: APP_ACTIONS.SET_LOADING, payload: loading });
   }, []);
 
   const addVehicle = useCallback((vehicle) => {
@@ -478,7 +510,7 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: APP_ACTIONS.CLEAR_NOTIFICATIONS });
   }, []);
 
-  // Helper functions
+  // Helper functions remain the same...
   const getVehicleById = useCallback((vehicleId) => {
     return (state.vehicles || []).find(vehicle => vehicle.id === vehicleId);
   }, [state.vehicles]);
@@ -537,7 +569,6 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use app context
 export const useApp = () => {
   const context = useContext(AppContext);
   
