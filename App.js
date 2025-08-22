@@ -1,4 +1,4 @@
-// App.js - Updated with proper error handling
+// App.js - Updated with ErrorProvider
 import React from 'react';
 import { StatusBar, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -6,16 +6,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Context Providers
+import { ErrorProvider } from './src/context/ErrorContext'; // Add this line
 import { ThemeProvider } from './src/context/ThemeContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { AppProvider } from './src/context/AppContext';
-import { ErrorProvider } from './src/context/ErrorContext'; // Add this if missing
 
 // Navigation
 import RoleBasedNavigator from './src/navigation/RoleBasedNavigator';
-
-// Debug components (remove in production)
-import ForceLogout from './src/components/debug/ForceLogout';
 
 const Stack = createStackNavigator();
 

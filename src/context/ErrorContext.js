@@ -1,4 +1,4 @@
-// src/context/ErrorContext.js - Create this file if it doesn't exist
+// src/context/ErrorContext.js - CREATE THIS FILE
 import React, { createContext, useContext, useState } from 'react';
 
 const ErrorContext = createContext();
@@ -6,14 +6,19 @@ const ErrorContext = createContext();
 export const useError = () => {
   const context = useContext(ErrorContext);
   if (!context) {
-    throw new Error('useError must be used within an ErrorProvider');
+    // Return a safe default if context is not available
+    return {
+      error: null,
+      clearError: () => console.log('clearError called but no ErrorProvider'),
+      showError: () => console.log('showError called but no ErrorProvider'),
+      hasError: false
+    };
   }
   return context;
 };
 
 export const ErrorProvider = ({ children }) => {
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   const clearError = () => {
     console.log('🧹 Clearing error');
@@ -29,16 +34,10 @@ export const ErrorProvider = ({ children }) => {
     });
   };
 
-  const setLoadingState = (isLoading) => {
-    setLoading(isLoading);
-  };
-
   const value = {
     error,
-    loading,
-    clearError,        // This function was missing!
+    clearError,
     showError,
-    setLoadingState,
     hasError: !!error
   };
 

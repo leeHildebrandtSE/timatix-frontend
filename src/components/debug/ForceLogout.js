@@ -1,12 +1,10 @@
-// Add this temporarily to your App.js or create a debug component
-// src/components/debug/ForceLogout.js
-
+// src/components/debug/ForceLogout.js - CREATE THIS FILE
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
 const ForceLogout = () => {
-  const { logout, token } = useAuth();
+  const { logout, token, user } = useAuth();
 
   const handleForceLogout = async () => {
     Alert.alert(
@@ -18,8 +16,9 @@ const ForceLogout = () => {
           text: 'Clear & Logout', 
           style: 'destructive',
           onPress: async () => {
+            console.log('🗑️ Force logout initiated...');
             await logout();
-            console.log('🗑️ Forced logout completed - old token cleared');
+            console.log('✅ Force logout completed - old token cleared');
           }
         }
       ]
@@ -27,16 +26,21 @@ const ForceLogout = () => {
   };
 
   const checkCurrentToken = () => {
-    console.log('🔍 Current token info:', {
+    console.log('🔍 Current authentication info:', {
       hasToken: !!token,
+      hasUser: !!user,
       tokenLength: token?.length || 0,
       isOldFormat: token && token.length < 100, // Old demo token was 25 chars
-      tokenPreview: token ? token.substring(0, 50) + '...' : 'None'
+      tokenPreview: token ? token.substring(0, 50) + '...' : 'None',
+      userEmail: user?.email || 'None',
+      userRole: user?.role || 'None'
     });
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>🔧 Auth Debug Tool</Text>
+      
       <TouchableOpacity style={styles.button} onPress={checkCurrentToken}>
         <Text style={styles.buttonText}>Check Current Token</Text>
       </TouchableOpacity>
@@ -44,6 +48,18 @@ const ForceLogout = () => {
       <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleForceLogout}>
         <Text style={styles.buttonText}>Force Logout & Clear</Text>
       </TouchableOpacity>
+      
+      <View style={styles.info}>
+        <Text style={styles.infoText}>
+          Token Length: {token?.length || 0} chars
+        </Text>
+        <Text style={styles.infoText}>
+          Format: {token && token.length > 100 ? 'JWT ✅' : 'Old Demo ❌'}
+        </Text>
+        <Text style={styles.infoText}>
+          User: {user?.email || 'None'}
+        </Text>
+      </View>
     </View>
   );
 };
@@ -54,6 +70,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     margin: 10,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+    color: '#333',
   },
   button: {
     backgroundColor: '#007AFF',
@@ -68,6 +93,17 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     fontWeight: '600',
+  },
+  info: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 6,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#666',
+    marginVertical: 2,
   },
 });
 
