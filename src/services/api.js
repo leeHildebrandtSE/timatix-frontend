@@ -1,3 +1,4 @@
+// src/services/api.js - FIXED VERSION with proper token handling
 import { API_CONFIG, ERROR_MESSAGES } from '../utils/constants';
 import { storageService } from './storage';
 import { STORAGE_KEYS } from '../utils/constants';
@@ -10,15 +11,15 @@ class ApiService {
   }
 
   /**
-   * Get authentication token with debugging
+   * Get authentication token with proper error handling
    */
   async getAuthToken() {
     try {
       const token = await storageService.get(STORAGE_KEYS.USER_TOKEN);
-      console.log('🔑 Token retrieval:', {
+      console.log('🔑 Token retrieval result:', {
         hasToken: !!token,
         tokenLength: token ? token.length : 0,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token'
+        tokenType: token ? (token.startsWith('demo_') ? 'demo' : 'real') : 'none'
       });
       return token;
     } catch (error) {
@@ -28,7 +29,7 @@ class ApiService {
   }
 
   /**
-   * Create request headers with debugging
+   * Create request headers with proper authorization
    */
   async createHeaders(contentType = 'application/json') {
     const headers = {
@@ -39,72 +40,92 @@ class ApiService {
     const token = await this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('✅ Authorization header added to request');
+      console.log('✅ Added Authorization header to request');
     } else {
-      console.warn('⚠️ No token available - request will be unauthorized');
+      console.warn('⚠️ No authentication token available');
     }
-
-    console.log('📋 Request headers:', {
-      ...headers,
-      Authorization: headers.Authorization ? 'Bearer [REDACTED]' : 'Not set'
-    });
 
     return headers;
   }
 
   /**
-   * Handle API response with better error logging
+   * Enhanced response handler with better error parsing
    */
   async handleResponse(response) {
-    console.log('📡 Response received:', {
+    console.log('📡 API Response:', {
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
-      url: response.url
+      url: response.url.replace(this.baseURL, '[API]')
     });
 
-    const contentType = response.headers.get('content-type');
-    
     if (!response.ok) {
-      let errorMessage = ERROR_MESSAGES.SERVER_ERROR;
-      
-      // Handle specific status codes
-      if (response.status === 401) {
-        console.error('🔒 401 Unauthorized - Token may be invalid or expired');
-        errorMessage = 'Authentication required. Please log in again.';
-      } else if (response.status === 403) {
-        console.error('🚫 403 Forbidden - Access denied');
-        errorMessage = 'Access forbidden. You do not have permission.';
-      } else if (response.status === 404) {
-        console.error('🔍 404 Not Found - Endpoint does not exist');
-        errorMessage = 'Resource not found.';
-      }
+      let errorMessage = 'Unknown error occurred';
       
       try {
+        const contentType = response.headers.get('content-type');
+        
         if (contentType && contentType.includes('application/json')) {
           const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-          console.error('📄 Error response body:', errorData);
+          console.error('📄 Error response data:', errorData);
+          
+          // Handle different error response formats
+          errorMessage = errorData.message || 
+                       errorData.error || 
+                       errorData.detail || 
+                       errorData.errorMessage ||
+                       'Server error occurred';
         } else {
           const textError = await response.text();
-          errorMessage = textError || errorMessage;
           console.error('📄 Error response text:', textError);
+          errorMessage = textError || 'Server error occurred';
         }
       } catch (parseError) {
         console.error('❌ Error parsing error response:', parseError);
+        
+        // Fallback error messages based on status code
+        switch (response.status) {
+          case 401:
+            errorMessage = 'Authentication required. Please log in again.';
+            break;
+          case 403:
+            errorMessage = 'Access denied. You do not have permission.';
+            break;
+          case 404:
+            errorMessage = 'Resource not found.';
+            break;
+          case 500:
+            errorMessage = 'Internal server error. Please try again later.';
+            break;
+          default:
+            errorMessage = `Server error (${response.status}). Please try again.`;
+        }
       }
 
       const error = new Error(errorMessage);
       error.status = response.status;
       error.response = response;
+      
+      // Log specific authentication errors
+      if (response.status === 401 || response.status === 403) {
+        console.error('🔒 Authentication/Authorization Error:', {
+          status: response.status,
+          message: errorMessage,
+          hasToken: !!(await this.getAuthToken())
+        });
+      }
+      
       throw error;
     }
 
+    // Parse successful response
+    const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
-      console.log('✅ JSON response received:', {
+      console.log('✅ Success response received:', {
         hasData: !!data,
-        keys: typeof data === 'object' ? Object.keys(data) : 'Not an object'
+        dataType: typeof data,
+        keys: typeof data === 'object' && data !== null ? Object.keys(data) : 'Not an object'
       });
       return data;
     }
@@ -113,16 +134,17 @@ class ApiService {
   }
 
   /**
-   * Make HTTP request with enhanced debugging
+   * Enhanced request method with better debugging
    */
   async makeRequest(url, options = {}, attempt = 1) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    console.log(`📤 Making request (attempt ${attempt}):`, {
-      url,
+    console.log(`📤 API Request (attempt ${attempt}):`, {
       method: options.method || 'GET',
-      hasBody: !!options.body
+      url: url.replace(this.baseURL, '[API]'),
+      hasBody: !!options.body,
+      timeout: this.timeout
     });
 
     try {
@@ -140,20 +162,26 @@ class ApiService {
       clearTimeout(timeoutId);
 
       console.error(`❌ Request failed (attempt ${attempt}):`, {
-        url,
+        url: url.replace(this.baseURL, '[API]'),
         error: error.message,
         name: error.name,
         status: error.status
       });
 
-      // Handle network errors and retries
+      // Handle specific error types
       if (error.name === 'AbortError') {
-        throw new Error('Request timeout');
+        throw new Error('Request timeout - server took too long to respond');
       }
 
+      // Don't retry authentication errors
+      if (error.status === 401 || error.status === 403) {
+        throw error;
+      }
+
+      // Retry logic for network errors and server errors
       if (attempt < this.retryAttempts && this.shouldRetry(error)) {
-        console.warn(`🔄 Retrying request (${attempt}/${this.retryAttempts}):`, error.message);
-        await this.delay(1000 * attempt); // Exponential backoff
+        console.warn(`🔄 Retrying request (${attempt}/${this.retryAttempts})`);
+        await this.delay(1000 * attempt);
         return this.makeRequest(url, options, attempt + 1);
       }
 
@@ -162,11 +190,11 @@ class ApiService {
   }
 
   /**
-   * Check if request should be retried
+   * Determine if request should be retried
    */
   shouldRetry(error) {
-    // Don't retry authentication errors
-    if (error.status === 401 || error.status === 403) {
+    // Don't retry client errors (4xx)
+    if (error.status >= 400 && error.status < 500) {
       return false;
     }
     
@@ -186,7 +214,7 @@ class ApiService {
   }
 
   /**
-   * GET request with debugging
+   * GET request
    */
   async get(endpoint, params = {}) {
     const url = new URL(`${this.baseURL}${endpoint}`);
@@ -197,8 +225,6 @@ class ApiService {
         url.searchParams.append(key, params[key]);
       }
     });
-
-    console.log('🔍 GET request:', { endpoint, params, finalUrl: url.toString() });
 
     return this.makeRequest(url.toString(), {
       method: 'GET',
@@ -211,12 +237,6 @@ class ApiService {
   async post(endpoint, data = {}, options = {}) {
     const body = options.isFormData ? data : JSON.stringify(data);
     const contentType = options.isFormData ? undefined : 'application/json';
-
-    console.log('📝 POST request:', { 
-      endpoint, 
-      hasData: !!data, 
-      isFormData: options.isFormData 
-    });
 
     return this.makeRequest(`${this.baseURL}${endpoint}`, {
       method: 'POST',
@@ -263,110 +283,71 @@ class ApiService {
   }
 
   /**
-   * Upload file
-   */
-  async uploadFile(endpoint, file, additionalData = {}) {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    // Add additional form data
-    Object.keys(additionalData).forEach(key => {
-      formData.append(key, additionalData[key]);
-    });
-
-    return this.post(endpoint, formData, { isFormData: true });
-  }
-
-  /**
-   * Download file (Note: This won't work in React Native)
-   */
-  async downloadFile(endpoint, filename) {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'GET',
-        headers: await this.createHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Download failed: ${response.statusText}`);
-      }
-
-      // Note: This download method only works in web browsers, not React Native
-      if (typeof window !== 'undefined' && window.document) {
-        const blob = await response.blob();
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Download error:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Check API health
    */
   async healthCheck() {
     try {
-      const response = await this.get('/health');
-      return response.status === 'ok' || response.status === 'UP';
+      const response = await this.get('/actuator/health');
+      console.log('🏥 Health check result:', response);
+      return response.status === 'UP' || response.status === 'ok';
     } catch (error) {
-      console.error('Health check failed:', error);
+      console.error('💥 Health check failed:', error.message);
       return false;
     }
   }
 
   /**
-   * Debug method to check token storage
+   * Debug authentication state
    */
-  async debugTokenStorage() {
+  async debugAuth() {
+    console.log('🔍 === AUTHENTICATION DEBUG ===');
+    
     try {
-      const token = await storageService.get(STORAGE_KEYS.USER_TOKEN);
+      // Check stored token
+      const token = await this.getAuthToken();
       const userData = await storageService.get(STORAGE_KEYS.USER_DATA);
       
-      console.log('🔍 Storage Debug:', {
+      console.log('🔑 Auth State:', {
         hasToken: !!token,
         tokenLength: token ? token.length : 0,
+        tokenType: token ? (token.startsWith('demo_') ? 'demo' : 'real') : 'none',
         hasUserData: !!userData,
-        userDataKeys: userData ? Object.keys(JSON.parse(userData)) : 'No user data'
+        userRole: userData ? userData.role : 'unknown'
       });
-      
-      return { token, userData };
+
+      // Test health endpoint (should work without auth)
+      try {
+        console.log('🏥 Testing health endpoint...');
+        const health = await this.healthCheck();
+        console.log('✅ Health check result:', health);
+      } catch (healthError) {
+        console.error('❌ Health check failed:', healthError.message);
+      }
+
+      // Test authenticated endpoint if we have a token
+      if (token) {
+        try {
+          console.log('🔐 Testing authenticated endpoint...');
+          const vehicles = await this.get('/vehicles');
+          console.log('✅ Vehicles request successful:', {
+            isArray: Array.isArray(vehicles),
+            count: Array.isArray(vehicles) ? vehicles.length : 'not array'
+          });
+        } catch (authError) {
+          console.error('❌ Authenticated request failed:', {
+            message: authError.message,
+            status: authError.status
+          });
+        }
+      } else {
+        console.log('⚠️ No token found, skipping authenticated endpoint test');
+      }
+
     } catch (error) {
-      console.error('❌ Storage debug error:', error);
-      return { token: null, userData: null };
+      console.error('💥 Auth debug failed:', error);
     }
-  }
-
-  /**
-   * Set base URL
-   */
-  setBaseURL(url) {
-    this.baseURL = url;
-  }
-
-  /**
-   * Set timeout
-   */
-  setTimeout(timeout) {
-    this.timeout = timeout;
-  }
-
-  /**
-   * Set retry attempts
-   */
-  setRetryAttempts(attempts) {
-    this.retryAttempts = attempts;
+    
+    console.log('🔍 === DEBUG COMPLETE ===');
   }
 }
 
