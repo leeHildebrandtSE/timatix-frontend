@@ -1,4 +1,4 @@
-// src/utils/constants.js - FIXED for Physical Device Testing
+// src/utils/constants.js - FIXED Device Detection
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
@@ -9,14 +9,34 @@ const getBaseURL = () => {
     console.log('🔍 Device Info:', {
       platform: Platform.OS,
       isDevice: Constants.isDevice,
-      deviceName: Constants.deviceName
+      deviceName: Constants.deviceName,
+      deviceType: Constants.deviceType,
+      appOwnership: Constants.appOwnership
     });
 
-    if (Platform.OS === 'android' && !Constants.isDevice) {
+    // Better device detection logic
+    const isPhysicalDevice = Constants.isDevice === true || 
+                            Constants.deviceName !== undefined ||
+                            Constants.appOwnership === 'expo';
+
+    const isAndroidEmulator = Platform.OS === 'android' && 
+                             Constants.isDevice === false && 
+                             Constants.deviceName === undefined;
+
+    const isIOSSimulator = Platform.OS === 'ios' && 
+                          Constants.isDevice === false;
+
+    console.log('🔍 Detection Results:', {
+      isPhysicalDevice,
+      isAndroidEmulator,
+      isIOSSimulator
+    });
+
+    if (isAndroidEmulator) {
       // Android emulator uses 10.0.2.2 to access host machine's localhost
       console.log('🤖 Using Android Emulator URL');
       return 'http://10.0.2.2:8081/api';
-    } else if (Platform.OS === 'ios' && !Constants.isDevice) {
+    } else if (isIOSSimulator) {
       // iOS simulator can use localhost directly
       console.log('🍎 Using iOS Simulator URL');
       return 'http://localhost:8081/api';
@@ -25,8 +45,8 @@ const getBaseURL = () => {
       console.log('🌐 Using Web URL');
       return 'http://localhost:8081/api';
     } else {
-      // Physical device - use computer's network IP
-      console.log('📱 Using Physical Device URL');
+      // Physical device OR when in doubt, use network IP
+      console.log('📱 Using Physical Device URL (Network IP)');
       return 'http://192.168.18.7:8081/api';
     }
   } else {
@@ -47,8 +67,17 @@ console.log('🔗 API Configuration:', {
   BASE_URL: API_CONFIG.BASE_URL,
   PLATFORM: Platform.OS,
   IS_DEVICE: Constants.isDevice,
+  DEVICE_NAME: Constants.deviceName,
   EXPO_DEV: __DEV__
 });
+
+// Alternative: Force physical device URL for testing
+// Uncomment this if the detection still doesn't work:
+// export const API_CONFIG = {
+//   BASE_URL: 'http://192.168.18.7:8081/api',
+//   TIMEOUT: 15000,
+//   RETRY_ATTEMPTS: 3,
+// };
 
 // Test URLs for manual verification
 console.log('🧪 Test these URLs in your browser:');
