@@ -1,9 +1,63 @@
+// src/utils/constants.js - Updated API Configuration
+import { Platform } from 'react-native';
+
+// Get the correct base URL based on platform and environment
+const getBaseURL = () => {
+  if (__DEV__) {
+    // Development environment
+    if (Platform.OS === 'android') {
+      // Android emulator uses 10.0.2.2 to access host machine's localhost
+      return 'http://10.0.2.2:8081/api';
+    } else if (Platform.OS === 'ios') {
+      // iOS simulator can use localhost directly
+      return 'http://localhost:8081/api';
+    } else {
+      // Web platform
+      return 'http://localhost:8081/api';
+    }
+  } else {
+    // Production environment - replace with your actual production API URL
+    return 'https://your-production-api.com/api';
+  }
+};
+
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://172.21.5.129:8081/api',
+  BASE_URL: getBaseURL(),
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
 };
+
+// Alternative: Manual configuration if you know your setup
+// Uncomment and modify the appropriate line below:
+
+// For Android Emulator:
+// export const API_CONFIG = {
+//   BASE_URL: 'http://10.0.2.2:8081/api',
+//   TIMEOUT: 10000,
+//   RETRY_ATTEMPTS: 3,
+// };
+
+// For iOS Simulator:
+// export const API_CONFIG = {
+//   BASE_URL: 'http://localhost:8081/api',
+//   TIMEOUT: 10000,
+//   RETRY_ATTEMPTS: 3,
+// };
+
+// For Physical Device (replace with your computer's IP):
+// export const API_CONFIG = {
+//   BASE_URL: 'http://192.168.18.7:8081/api',  // Your computer's local IP
+//   TIMEOUT: 10000,
+//   RETRY_ATTEMPTS: 3,
+// };
+
+// For Expo Web:
+// export const API_CONFIG = {
+//   BASE_URL: 'http://localhost:8081/api',
+//   TIMEOUT: 10000,
+//   RETRY_ATTEMPTS: 3,
+// };
 
 // User Roles
 export const USER_ROLES = {
