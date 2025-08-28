@@ -1,4 +1,4 @@
-// src/utils/constants.js - FIXED Device Detection
+// src/utils/constants.js - FIXED with correct backend port
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 const getBaseURL = () => {
   if (__DEV__) {
     // Development environment
-    console.log('🔍 Device Info:', {
+    console.log('Device Info:', {
       platform: Platform.OS,
       isDevice: Constants.isDevice,
       deviceName: Constants.deviceName,
@@ -26,7 +26,7 @@ const getBaseURL = () => {
     const isIOSSimulator = Platform.OS === 'ios' && 
                           Constants.isDevice === false;
 
-    console.log('🔍 Detection Results:', {
+    console.log('Detection Results:', {
       isPhysicalDevice,
       isAndroidEmulator,
       isIOSSimulator
@@ -34,36 +34,36 @@ const getBaseURL = () => {
 
     if (isAndroidEmulator) {
       // Android emulator uses 10.0.2.2 to access host machine's localhost
-      console.log('🤖 Using Android Emulator URL');
-      return 'http://10.0.2.2:8081/api';
+      console.log('Using Android Emulator URL');
+      return 'http://10.0.2.2:8083/api'; // FIXED: Added /api context path
     } else if (isIOSSimulator) {
       // iOS simulator can use localhost directly
-      console.log('🍎 Using iOS Simulator URL');
-      return 'http://localhost:8081/api';
+      console.log('Using iOS Simulator URL');
+      return 'http://localhost:8083/api'; // FIXED: Added /api context path
     } else if (typeof window !== 'undefined' && window.location) {
       // Web platform
-      console.log('🌐 Using Web URL');
-      return 'http://localhost:8081/api';
+      console.log('Using Web URL');
+      return 'http://localhost:8083/api'; // FIXED: Added /api context path
     } else {
       // Physical device OR when in doubt, use network IP
-      console.log('📱 Using Physical Device URL (Network IP)');
-      return 'http://192.168.18.7:8081/api';
+      console.log('Using Physical Device URL (Network IP)');
+      return 'http://192.168.18.7:8083/api'; // FIXED: Added /api context path
     }
   } else {
     // Production environment - replace with your actual production API URL
-    return 'https://your-production-api.com/api';
+    return 'https://your-production-api.com';
   }
 };
 
 // API Configuration
 export const API_CONFIG = {
   BASE_URL: getBaseURL(),
-  TIMEOUT: 15000, // Increased for development
+  TIMEOUT: 15000,
   RETRY_ATTEMPTS: 3,
 };
 
 // Log the configuration for debugging
-console.log('🔗 API Configuration:', {
+console.log('API Configuration:', {
   BASE_URL: API_CONFIG.BASE_URL,
   PLATFORM: Platform.OS,
   IS_DEVICE: Constants.isDevice,
@@ -71,18 +71,14 @@ console.log('🔗 API Configuration:', {
   EXPO_DEV: __DEV__
 });
 
-// Alternative: Force physical device URL for testing
-// Uncomment this if the detection still doesn't work:
-// export const API_CONFIG = {
-//   BASE_URL: 'http://192.168.18.7:8081/api',
-//   TIMEOUT: 15000,
-//   RETRY_ATTEMPTS: 3,
-// };
-
 // Test URLs for manual verification
-console.log('🧪 Test these URLs in your browser:');
-console.log('💻 Local:', 'http://localhost:8081/api/actuator/health');
-console.log('📱 Mobile:', 'http://192.168.18.7:8081/api/actuator/health');
+console.log('Test these URLs in your browser:');
+console.log('Local:', 'http://localhost:8083/api/actuator/health'); // FIXED: Added /api context path
+console.log('Mobile:', 'http://192.168.18.7:8083/api/actuator/health'); // FIXED: Added /api context path
+
+// Rest of your constants remain the same...
+
+// Rest of your constants remain the same...
 
 // User Roles
 export const USER_ROLES = {
@@ -185,19 +181,19 @@ export const ROUTES = {
   PROFILE: 'Profile',
 };
 
-// Demo Credentials - Updated with real test accounts
+// Demo Credentials - UPDATED with correct password
 export const DEMO_CREDENTIALS = {
   CLIENT: {
     email: 'john.doe@email.com',
-    password: 'client123',
+    password: 'password', // UPDATED - matches database
   },
   MECHANIC: {
     email: 'mike@timatix.com',
-    password: 'mechanic123',
+    password: 'password', // UPDATED - matches database
   },
   ADMIN: {
     email: 'admin@timatix.com',
-    password: 'admin123',
+    password: 'password', // UPDATED - matches database
   },
 };
 
