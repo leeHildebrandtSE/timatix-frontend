@@ -1,4 +1,5 @@
 // src/utils/network.js
+import React from 'react'; // Add this import
 import { Alert } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 

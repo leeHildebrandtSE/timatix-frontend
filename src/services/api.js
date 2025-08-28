@@ -1,4 +1,4 @@
-// src/services/api.js - FIXED VERSION with proper token handling
+// src/services/api.js - UPDATED VERSION with corrected endpoints
 import { API_CONFIG, ERROR_MESSAGES } from '../utils/constants';
 import { storageService } from './storage';
 import { STORAGE_KEYS } from '../utils/constants';
@@ -16,14 +16,14 @@ class ApiService {
   async getAuthToken() {
     try {
       const token = await storageService.get(STORAGE_KEYS.USER_TOKEN);
-      console.log('🔑 Token retrieval result:', {
+      console.log('Token retrieval result:', {
         hasToken: !!token,
         tokenLength: token ? token.length : 0,
         tokenType: token ? (token.startsWith('demo_') ? 'demo' : 'real') : 'none'
       });
       return token;
     } catch (error) {
-      console.error('❌ Error getting auth token:', error);
+      console.error('Error getting auth token:', error);
       return null;
     }
   }
@@ -40,9 +40,9 @@ class ApiService {
     const token = await this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('✅ Added Authorization header to request');
+      console.log('Added Authorization header to request');
     } else {
-      console.warn('⚠️ No authentication token available');
+      console.warn('No authentication token available');
     }
 
     return headers;
@@ -52,7 +52,7 @@ class ApiService {
    * Enhanced response handler with better error parsing
    */
   async handleResponse(response) {
-    console.log('📡 API Response:', {
+    console.log('API Response:', {
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
@@ -67,7 +67,7 @@ class ApiService {
         
         if (contentType && contentType.includes('application/json')) {
           const errorData = await response.json();
-          console.error('📄 Error response data:', errorData);
+          console.error('Error response data:', errorData);
           
           // Handle different error response formats
           errorMessage = errorData.message || 
@@ -77,16 +77,16 @@ class ApiService {
                        'Server error occurred';
         } else {
           const textError = await response.text();
-          console.error('📄 Error response text:', textError);
+          console.error('Error response text:', textError);
           errorMessage = textError || 'Server error occurred';
         }
       } catch (parseError) {
-        console.error('❌ Error parsing error response:', parseError);
+        console.error('Error parsing error response:', parseError);
         
         // Fallback error messages based on status code
         switch (response.status) {
           case 401:
-            errorMessage = 'Authentication required. Please log in again.';
+            errorMessage = 'Invalid credentials';
             break;
           case 403:
             errorMessage = 'Access denied. You do not have permission.';
@@ -108,7 +108,7 @@ class ApiService {
       
       // Log specific authentication errors
       if (response.status === 401 || response.status === 403) {
-        console.error('🔒 Authentication/Authorization Error:', {
+        console.error('Authentication/Authorization Error:', {
           status: response.status,
           message: errorMessage,
           hasToken: !!(await this.getAuthToken())
@@ -122,7 +122,7 @@ class ApiService {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
-      console.log('✅ Success response received:', {
+      console.log('Success response received:', {
         hasData: !!data,
         dataType: typeof data,
         keys: typeof data === 'object' && data !== null ? Object.keys(data) : 'Not an object'
@@ -140,7 +140,7 @@ class ApiService {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    console.log(`📤 API Request (attempt ${attempt}):`, {
+    console.log(`API Request (attempt ${attempt}):`, {
       method: options.method || 'GET',
       url: url.replace(this.baseURL, '[API]'),
       hasBody: !!options.body,
@@ -161,7 +161,7 @@ class ApiService {
     } catch (error) {
       clearTimeout(timeoutId);
 
-      console.error(`❌ Request failed (attempt ${attempt}):`, {
+      console.error(`Request failed (attempt ${attempt}):`, {
         url: url.replace(this.baseURL, '[API]'),
         error: error.message,
         name: error.name,
@@ -180,7 +180,7 @@ class ApiService {
 
       // Retry logic for network errors and server errors
       if (attempt < this.retryAttempts && this.shouldRetry(error)) {
-        console.warn(`🔄 Retrying request (${attempt}/${this.retryAttempts})`);
+        console.warn(`Retrying request (${attempt}/${this.retryAttempts})`);
         await this.delay(1000 * attempt);
         return this.makeRequest(url, options, attempt + 1);
       }
@@ -283,31 +283,134 @@ class ApiService {
   }
 
   /**
-   * Check API health
+   * Check API health - UPDATED to use correct endpoint
    */
   async healthCheck() {
     try {
-      const response = await this.get('/actuator/health');
-      console.log('🏥 Health check result:', response);
-      return response.status === 'UP' || response.status === 'ok';
+      // Try multiple health endpoints to match your backend configuration
+      let response;
+      
+      try {
+        response = await this.get('/health');
+        console.log('Health check result (via /health):', response);
+      } catch (error) {
+        console.log('Primary health endpoint failed, trying /actuator/health');
+        response = await this.get('/actuator/health');
+        console.log('Health check result (via /actuator/health):', response);
+      }
+      
+      return response.status === 'UP' || response.status === 'ok' || response === 'UP';
     } catch (error) {
-      console.error('💥 Health check failed:', error.message);
+      console.error('Health check failed:', error.message);
       return false;
     }
+  }
+
+  /**
+   * Authentication methods - UPDATED to use correct endpoints
+   */
+  async login(email, password) {
+    try {
+      console.log('Attempting login for:', email);
+      
+      const response = await this.post('/users/login', {
+        email,
+        password
+      });
+
+      console.log('Login response received:', {
+        hasToken: !!response.token,
+        hasUser: !!response.user,
+        userRole: response.user?.role
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Login failed:', error.message);
+      throw error;
+    }
+  }
+
+  async register(userData) {
+    try {
+      console.log('Attempting registration for:', userData.email);
+      
+      const response = await this.post('/users/register', userData);
+
+      console.log('Registration response received:', {
+        hasToken: !!response.token,
+        hasUser: !!response.user,
+        userRole: response.user?.role
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Registration failed:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Service-related methods
+   */
+  async getServices() {
+    return this.get('/services');
+  }
+
+  async getServiceById(id) {
+    return this.get(`/services/${id}`);
+  }
+
+  /**
+   * Vehicle-related methods
+   */
+  async getVehicles() {
+    return this.get('/vehicles');
+  }
+
+  async addVehicle(vehicleData) {
+    return this.post('/vehicles', vehicleData);
+  }
+
+  async updateVehicle(id, vehicleData) {
+    return this.put(`/vehicles/${id}`, vehicleData);
+  }
+
+  async deleteVehicle(id) {
+    return this.delete(`/vehicles/${id}`);
+  }
+
+  /**
+   * Booking-related methods
+   */
+  async getAvailableSlots(date) {
+    return this.get('/booking-slots/available', { date });
+  }
+
+  async createServiceRequest(requestData) {
+    return this.post('/service-requests', requestData);
+  }
+
+  async getServiceRequests() {
+    return this.get('/service-requests');
+  }
+
+  async getServiceRequestById(id) {
+    return this.get(`/service-requests/${id}`);
   }
 
   /**
    * Debug authentication state
    */
   async debugAuth() {
-    console.log('🔍 === AUTHENTICATION DEBUG ===');
+    console.log('=== AUTHENTICATION DEBUG ===');
     
     try {
       // Check stored token
       const token = await this.getAuthToken();
       const userData = await storageService.get(STORAGE_KEYS.USER_DATA);
       
-      console.log('🔑 Auth State:', {
+      console.log('Auth State:', {
         hasToken: !!token,
         tokenLength: token ? token.length : 0,
         tokenType: token ? (token.startsWith('demo_') ? 'demo' : 'real') : 'none',
@@ -317,37 +420,37 @@ class ApiService {
 
       // Test health endpoint (should work without auth)
       try {
-        console.log('🏥 Testing health endpoint...');
+        console.log('Testing health endpoint...');
         const health = await this.healthCheck();
-        console.log('✅ Health check result:', health);
+        console.log('Health check result:', health);
       } catch (healthError) {
-        console.error('❌ Health check failed:', healthError.message);
+        console.error('Health check failed:', healthError.message);
       }
 
       // Test authenticated endpoint if we have a token
       if (token) {
         try {
-          console.log('🔐 Testing authenticated endpoint...');
+          console.log('Testing authenticated endpoint...');
           const vehicles = await this.get('/vehicles');
-          console.log('✅ Vehicles request successful:', {
+          console.log('Vehicles request successful:', {
             isArray: Array.isArray(vehicles),
             count: Array.isArray(vehicles) ? vehicles.length : 'not array'
           });
         } catch (authError) {
-          console.error('❌ Authenticated request failed:', {
+          console.error('Authenticated request failed:', {
             message: authError.message,
             status: authError.status
           });
         }
       } else {
-        console.log('⚠️ No token found, skipping authenticated endpoint test');
+        console.log('No token found, skipping authenticated endpoint test');
       }
 
     } catch (error) {
-      console.error('💥 Auth debug failed:', error);
+      console.error('Auth debug failed:', error);
     }
     
-    console.log('🔍 === DEBUG COMPLETE ===');
+    console.log('=== DEBUG COMPLETE ===');
   }
 }
 
