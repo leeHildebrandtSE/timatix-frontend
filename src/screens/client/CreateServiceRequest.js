@@ -19,7 +19,7 @@ import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { SERVICE_TYPES } from '../../utils/constants';
 import { validateServiceRequestForm } from '../../utils/validation';
-import { serviceRequestsService } from '../../services/serviceRequests';
+import { serviceRequestsService } from '../../services/serviceRequestsService';
 
 const CreateServiceRequest = () => {
   const route = useRoute();

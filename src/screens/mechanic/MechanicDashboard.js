@@ -17,7 +17,7 @@ import ServiceCard from '../../components/cards/ServiceCard';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { SERVICE_STATUS } from '../../utils/constants';
-import { serviceRequestsService } from '../../services/serviceRequests';
+import { serviceRequestsService } from '../../services/serviceRequestsService';
 
 const MechanicDashboard = ({ navigation }) => {
   const { user } = useAuth();

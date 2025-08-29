@@ -20,8 +20,29 @@ import VehicleForm from '../../components/forms/VehicleForm';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { vehiclesService } from '../../services/vehicles';
-import { serviceRequestsService } from '../../services/serviceRequests';
+import { serviceRequestsService } from '../../services/serviceRequestsService';
 import { formatDate, formatMileage, formatCurrency } from '../../utils/formatters';
+
+const [vehicleMakes, setVehicleMakes] = useState([]);
+
+useEffect(() => {
+  fetchVehicleMakes();
+}, []);
+
+const fetchVehicleMakes = async () => {
+  try {
+    const makes = await vehiclesService.getVehicleMakes(); // new API call
+    setVehicleMakes(makes); // assumes API returns array of { make: 'TOYOTA' } objects
+  } catch (error) {
+    console.error('Error fetching vehicle makes:', error);
+    // fallback list if API fails
+    setVehicleMakes([
+      { make: 'TOYOTA' },
+      { make: 'BMW' },
+      { make: 'FORD' },
+    ]);
+  }
+};
 
 const VehicleDetails = () => {
   const route = useRoute();
@@ -588,6 +609,7 @@ const VehicleDetails = () => {
               loading={formLoading}
               initialData={vehicle}
               isEditing={true}
+              vehicleMakes={vehicleMakes}
             />
           </ScrollView>
         </SafeAreaView>

@@ -19,7 +19,7 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { SERVICE_STATUS } from '../../utils/constants';
-import { serviceRequestsService } from '../../services/serviceRequests';
+import { serviceRequestsService } from '../../services/serviceRequestsService';
 import { formatCurrency } from '../../utils/formatters';
 
 const QuoteManagement = ({ navigation }) => {

@@ -4,15 +4,19 @@ import { useTheme } from '../../context/ThemeContext';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import { validateVehicleForm } from '../../utils/validation';
-import { VEHICLE_MAKES } from '../../utils/constants';
+// import { VEHICLE_MAKES } from '../../utils/constants';
+
 
 const VehicleForm = ({ 
   onSubmit, 
   loading = false, 
   initialData = null,
-  isEditing = false 
+  isEditing = false,
+  vehicleMakes = []  // new prop
 }) => {
   const { theme } = useTheme();
+  
+  const [vehicleMakes, setVehicleMakes] = useState([]);
   
   const [formData, setFormData] = useState({
     make: initialData?.make || '',
@@ -27,6 +31,20 @@ const VehicleForm = ({
   
   const [errors, setErrors] = useState({});
   const [showMakeModal, setShowMakeModal] = useState(false);
+
+  // Fetch vehicle makes from backend
+  useEffect(() => {
+    const fetchVehicleMakes = async () => {
+      try {
+        const response = await axios.get('http://<YOUR_BACKEND>/vehicle-makes'); // replace with your backend URL
+        setVehicleMakes(response.data.map(make => ({ id: make, name: make })));
+      } catch (err) {
+        console.error('Failed to fetch vehicle makes', err);
+      }
+    };
+
+    fetchVehicleMakes();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -43,10 +61,11 @@ const VehicleForm = ({
     }
   };
 
-  const handleMakeSelect = (make) => {
-    handleInputChange('make', make);
+  const handleMakeSelect = (makeObj) => {
+    handleInputChange('make', makeObj.name); // store name in formData.make
     setShowMakeModal(false);
   };
+
 
   const handleSubmit = () => {
     // Convert year and mileage to numbers
@@ -71,9 +90,12 @@ const VehicleForm = ({
       style={[styles.makeItem, { borderBottomColor: theme.colors.border }]}
       onPress={() => handleMakeSelect(item)}
     >
-      <Text style={[styles.makeText, theme.typography.body1]}>{item}</Text>
+      <Text style={[styles.makeText, theme.typography.body1]}>
+        {item.name}
+      </Text>
     </TouchableOpacity>
   );
+
 
   return (
     <View style={styles.container}>
@@ -188,9 +210,9 @@ const VehicleForm = ({
             </View>
             
             <FlatList
-              data={VEHICLE_MAKES}
+              data={vehicleMakes}
               renderItem={renderMakeItem}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.id.toString()}
               style={styles.makeList}
             />
           </View>
