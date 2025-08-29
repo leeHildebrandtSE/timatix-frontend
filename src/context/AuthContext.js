@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { STORAGE_KEYS } from '../utils/constants';
+import { API_CONFIG } from '../utils/constants';
 
 const AuthContext = createContext();
 
@@ -81,7 +82,7 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
 
-    const response = await fetch("http://192.168.18.7:8081/api/auth/register", {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/users/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
@@ -129,7 +130,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Call your backend login API
-    const response = await fetch("http://192.168.18.7:8081/api/auth/login", {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/users/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
