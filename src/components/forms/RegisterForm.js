@@ -10,6 +10,7 @@ const RegisterForm = ({ onSubmit, loading = false }) => {
     lastName: '',
     email: '',
     phoneNumber: '',
+    address: '',
     password: '',
     confirmPassword: '',
   });
