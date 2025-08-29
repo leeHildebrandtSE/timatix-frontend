@@ -14,7 +14,7 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import ClientDashboard from '../screens/client/Dashboard';
 import Vehicles from '../screens/client/Vehicles';
 import VehicleDetails from '../screens/client/VehicleDetails';
-import ServiceRequests from '../screens/client/ServiceRequests';
+import ServiceRequests from '../screens/client/ServiceRequestsScreen';
 import CreateServiceRequest from '../screens/client/CreateServiceRequest';
 import Profile from '../screens/client/Profile';
 
