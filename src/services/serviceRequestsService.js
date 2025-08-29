@@ -3,13 +3,20 @@ import { SERVICE_STATUS } from '../utils/constants';
 
 class ServiceRequestsService {
   /**
-   * Get all service requests for current user
+   * Get all service requests for the current user
+   * @param {string|number} [userId] - Optional user ID
    * @returns {Promise<Array>} Array of service requests
    */
-  async getUserRequests() {
+  async getUserRequests(userId) {
     try {
-      const response = await apiService.get('/service-requests/user');
-      return response.data || response;
+      if (userId) {
+        // Admin/mechanic can fetch by user ID
+        const response = await apiService.get(`/service-requests/${userId}`);
+        return response.data || response;
+      } else {
+        // Client uses their own /my-requests endpoint
+        return await this.getMyRequests();
+      }
     } catch (error) {
       console.error('Error fetching user service requests:', error);
       throw error;
@@ -17,13 +24,24 @@ class ServiceRequestsService {
   }
 
   /**
+   * Get service requests for the authenticated user (CLIENT)
+   */
+  async getMyRequests() {
+    try {
+      const response = await apiService.get('/service-requests/my-requests');
+      return response.data || response;
+    } catch (error) {
+      console.error('Error fetching my service requests:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all service requests (admin/mechanic view)
-   * @param {object} params - Query parameters
-   * @returns {Promise<Array>} Array of service requests
    */
   async getAllRequests(params = {}) {
     try {
-      const response = await apiService.get('/service-requests', params);
+      const response = await apiService.get('/service-requests', { params });
       return response.data || response;
     } catch (error) {
       console.error('Error fetching all service requests:', error);
@@ -31,12 +49,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Get service requests assigned to mechanic
-   * @param {string} mechanicId - Mechanic ID
-   * @returns {Promise<Array>} Array of assigned service requests
-   */
   async getAssignedRequests(mechanicId) {
+    if (!mechanicId) throw new Error('Mechanic ID is required');
     try {
       const response = await apiService.get(`/service-requests/mechanic/${mechanicId}`);
       return response.data || response;
@@ -46,12 +60,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Get service request by ID
-   * @param {string} requestId - Service request ID
-   * @returns {Promise<object>} Service request details
-   */
   async getRequestById(requestId) {
+    if (!requestId) throw new Error('Request ID is required');
     try {
       const response = await apiService.get(`/service-requests/${requestId}`);
       return response.data || response;
@@ -61,11 +71,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Create new service request
-   * @param {object} requestData - Service request data
-   * @returns {Promise<object>} Created service request
-   */
   async createRequest(requestData) {
     try {
       const response = await apiService.post('/service-requests', requestData);
@@ -76,13 +81,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Update service request
-   * @param {string} requestId - Service request ID
-   * @param {object} updateData - Data to update
-   * @returns {Promise<object>} Updated service request
-   */
   async updateRequest(requestId, updateData) {
+    if (!requestId) throw new Error('Request ID is required');
     try {
       const response = await apiService.put(`/service-requests/${requestId}`, updateData);
       return response.data || response;
@@ -92,13 +92,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Update service request status
-   * @param {string} requestId - Service request ID
-   * @param {string} status - New status
-   * @returns {Promise<object>} Updated service request
-   */
   async updateStatus(requestId, status) {
+    if (!requestId || !status) throw new Error('Request ID and status are required');
     try {
       const response = await apiService.patch(`/service-requests/${requestId}/status`, { status });
       return response.data || response;
@@ -108,13 +103,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Cancel service request
-   * @param {string} requestId - Service request ID
-   * @param {string} reason - Cancellation reason
-   * @returns {Promise<object>} Updated service request
-   */
   async cancelRequest(requestId, reason) {
+    if (!requestId || !reason) throw new Error('Request ID and reason are required');
     try {
       const response = await apiService.patch(`/service-requests/${requestId}/cancel`, { reason });
       return response.data || response;
@@ -124,12 +114,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Accept quote for service request
-   * @param {string} requestId - Service request ID
-   * @returns {Promise<object>} Updated service request
-   */
   async acceptQuote(requestId) {
+    if (!requestId) throw new Error('Request ID is required');
     try {
       const response = await apiService.post(`/service-requests/${requestId}/accept-quote`);
       return response.data || response;
@@ -139,13 +125,8 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Decline quote for service request
-   * @param {string} requestId - Service request ID
-   * @param {string} reason - Decline reason
-   * @returns {Promise<object>} Updated service request
-   */
   async declineQuote(requestId, reason) {
+    if (!requestId || !reason) throw new Error('Request ID and reason are required');
     try {
       const response = await apiService.post(`/service-requests/${requestId}/decline-quote`, { reason });
       return response.data || response;
@@ -155,12 +136,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Assign mechanic to service request
-   * @param {string} requestId - Service request ID
-   * @param {string} mechanicId - Mechanic ID
-   * @returns {Promise<object>} Updated service request
-   */
   async assignMechanic(requestId, mechanicId) {
     try {
       const response = await apiService.post(`/service-requests/${requestId}/assign`, { mechanicId });
@@ -171,11 +146,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Start service work
-   * @param {string} requestId - Service request ID
-   * @returns {Promise<object>} Updated service request
-   */
   async startWork(requestId) {
     try {
       const response = await apiService.post(`/service-requests/${requestId}/start`);
@@ -186,12 +156,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Complete service work
-   * @param {string} requestId - Service request ID
-   * @param {object} completionData - Completion details
-   * @returns {Promise<object>} Updated service request
-   */
   async completeWork(requestId, completionData) {
     try {
       const response = await apiService.post(`/service-requests/${requestId}/complete`, completionData);
@@ -202,12 +166,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Add progress update to service request
-   * @param {string} requestId - Service request ID
-   * @param {object} progressData - Progress update data
-   * @returns {Promise<object>} Updated service request
-   */
   async addProgressUpdate(requestId, progressData) {
     try {
       const response = await apiService.post(`/service-requests/${requestId}/progress`, progressData);
@@ -218,12 +176,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Upload photos for service request
-   * @param {string} requestId - Service request ID
-   * @param {Array} photos - Array of photo files
-   * @returns {Promise<object>} Updated service request
-   */
   async uploadPhotos(requestId, photos) {
     try {
       const formData = new FormData();
@@ -231,11 +183,7 @@ class ServiceRequestsService {
         formData.append(`photos[${index}]`, photo);
       });
 
-      const response = await apiService.post(
-        `/service-requests/${requestId}/photos`, 
-        formData, 
-        { isFormData: true }
-      );
+      const response = await apiService.post(`/service-requests/${requestId}/photos`, formData, { isFormData: true });
       return response.data || response;
     } catch (error) {
       console.error('Error uploading photos:', error);
@@ -243,14 +191,9 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Get service request statistics
-   * @param {object} filters - Filter options
-   * @returns {Promise<object>} Statistics data
-   */
   async getStatistics(filters = {}) {
     try {
-      const response = await apiService.get('/service-requests/statistics', filters);
+      const response = await apiService.get('/service-requests/statistics', { params: filters });
       return response.data || response;
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -258,14 +201,9 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Get available service slots
-   * @param {string} date - Date in YYYY-MM-DD format
-   * @returns {Promise<Array>} Available time slots
-   */
   async getAvailableSlots(date) {
     try {
-      const response = await apiService.get(`/service-requests/available-slots`, { date });
+      const response = await apiService.get('/service-requests/available-slots', { params: { date } });
       return response.data || response;
     } catch (error) {
       console.error('Error fetching available slots:', error);
@@ -273,11 +211,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Send reminder for service request
-   * @param {string} requestId - Service request ID
-   * @returns {Promise<boolean>} Success status
-   */
   async sendReminder(requestId) {
     try {
       await apiService.post(`/service-requests/${requestId}/reminder`);
@@ -288,12 +221,6 @@ class ServiceRequestsService {
     }
   }
 
-  /**
-   * Rate completed service
-   * @param {string} requestId - Service request ID
-   * @param {object} ratingData - Rating and review data
-   * @returns {Promise<object>} Updated service request
-   */
   async rateService(requestId, ratingData) {
     try {
       const response = await apiService.post(`/service-requests/${requestId}/rating`, ratingData);
@@ -305,6 +232,5 @@ class ServiceRequestsService {
   }
 }
 
-// Create and export singleton instance
 export const serviceRequestsService = new ServiceRequestsService();
 export default serviceRequestsService;
