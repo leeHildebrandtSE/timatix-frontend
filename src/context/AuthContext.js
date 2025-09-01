@@ -1,10 +1,272 @@
-// src/context/AuthContext.js - Updated with clearError function
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { storageService } from '../services/storage';
-import { STORAGE_KEYS } from '../utils/constants';
-import { API_CONFIG } from '../utils/constants';
+// src/context/AuthContext.js - Enhanced with Splash Screen Support
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthContext = createContext();
+
+const initialState = {
+  user: null,
+  isLoading: false,
+  isInitialized: false, // Track if initial auth check is complete
+  error: null,
+};
+
+const authReducer = (state, action) => {
+  switch (action.type) {
+    case 'INIT_START':
+      return {
+        ...state,
+        isLoading: true,
+        isInitialized: false,
+      };
+    case 'INIT_SUCCESS':
+      return {
+        ...state,
+        user: action.payload,
+        isLoading: false,
+        isInitialized: true,
+        error: null,
+      };
+    case 'LOGIN_START':
+      return {
+        ...state,
+        isLoading: true,
+        error: null,
+      };
+    case 'LOGIN_SUCCESS':
+      return {
+        ...state,
+        user: action.payload,
+        isLoading: false,
+        error: null,
+      };
+    case 'REGISTER_START':
+      return {
+        ...state,
+        isLoading: true,
+        error: null,
+      };
+    case 'REGISTER_SUCCESS':
+      return {
+        ...state,
+        isLoading: false,
+        error: null,
+      };
+    case 'LOGIN_FAILURE':
+    case 'REGISTER_FAILURE':
+      return {
+        ...state,
+        isLoading: false,
+        error: action.payload,
+      };
+    case 'LOGOUT':
+      return {
+        ...state,
+        user: null,
+        isLoading: false,
+        error: null,
+      };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: { ...state.user, ...action.payload },
+      };
+    case 'CLEAR_ERROR':
+      return {
+        ...state,
+        error: null,
+      };
+    default:
+      return state;
+  }
+};
+
+export const AuthProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(authReducer, initialState);
+
+  // Initialize auth state on app start
+  useEffect(() => {
+    initializeAuth();
+  }, []);
+
+  const initializeAuth = async () => {
+    try {
+      dispatch({ type: 'INIT_START' });
+      
+      // Add minimum delay for splash screen experience
+      const [userData] = await Promise.all([
+        getStoredUser(),
+        new Promise(resolve => setTimeout(resolve, 2000)) // Minimum 2 seconds for splash
+      ]);
+      
+      dispatch({ type: 'INIT_SUCCESS', payload: userData });
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      dispatch({ type: 'INIT_SUCCESS', payload: null });
+    }
+  };
+
+  const getStoredUser = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('timatix_user');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error('Error getting stored user:', error);
+      return null;
+    }
+  };
+
+  const login = async (credentials) => {
+    try {
+      dispatch({ type: 'LOGIN_START' });
+      
+      // Simulate API call with realistic delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const response = await simulateLogin(credentials);
+      
+      // Store user data securely
+      await AsyncStorage.setItem('timatix_user', JSON.stringify(response.user));
+      await AsyncStorage.setItem('timatix_token', response.token);
+      
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
+      return response;
+    } catch (error) {
+      dispatch({ type: 'LOGIN_FAILURE', payload: error.message });
+      throw error;
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      dispatch({ type: 'REGISTER_START' });
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const response = await simulateRegister(userData);
+      
+      dispatch({ type: 'REGISTER_SUCCESS' });
+      return response;
+    } catch (error) {
+      dispatch({ type: 'REGISTER_FAILURE', payload: error.message });
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.multiRemove(['timatix_user', 'timatix_token']);
+      dispatch({ type: 'LOGOUT' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const updateUser = async (userData) => {
+    try {
+      const updatedUser = { ...state.user, ...userData };
+      dispatch({ type: 'UPDATE_USER', payload: userData });
+      
+      // Update stored data
+      await AsyncStorage.setItem('timatix_user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const clearError = () => {
+    dispatch({ type: 'CLEAR_ERROR' });
+  };
+
+  // Enhanced mock login with demo accounts
+  const simulateLogin = async (credentials) => {
+    const mockUsers = {
+      'client@demo.com': {
+        id: 'client_1',
+        email: 'client@demo.com',
+        role: 'CLIENT',
+        firstName: 'John',
+        lastName: 'Doe',
+        phoneNumber: '+27 11 123 4567',
+        profileImage: null,
+        createdAt: '2024-01-15T10:00:00Z',
+      },
+      'mechanic@demo.com': {
+        id: 'mechanic_1',
+        email: 'mechanic@demo.com',
+        role: 'MECHANIC',
+        firstName: 'Mike',
+        lastName: 'Smith',
+        phoneNumber: '+27 11 234 5678',
+        profileImage: null,
+        createdAt: '2023-08-20T14:30:00Z',
+      },
+      'admin@demo.com': {
+        id: 'admin_1',
+        email: 'admin@demo.com',
+        role: 'ADMIN',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        phoneNumber: '+27 11 345 6789',
+        profileImage: null,
+        createdAt: '2023-01-10T09:00:00Z',
+      },
+    };
+    
+    const user = mockUsers[credentials.email];
+    
+    if (!user) {
+      throw new Error('No account found with this email address');
+    }
+    
+    if (credentials.password !== 'demo123' && credentials.password !== 'admin123') {
+      throw new Error('Incorrect password');
+    }
+    
+    return { 
+      user, 
+      token: 'mock_jwt_token_' + user.id,
+      message: 'Login successful'
+    };
+  };
+
+  const simulateRegister = async (userData) => {
+    // Check if email already exists
+    const existingEmails = ['client@demo.com', 'mechanic@demo.com', 'admin@demo.com'];
+    
+    if (existingEmails.includes(userData.email)) {
+      throw new Error('An account with this email already exists');
+    }
+    
+    // Simulate successful registration
+    return {
+      message: 'Account created successfully',
+      userId: 'new_user_' + Date.now(),
+    };
+  };
+
+  const value = {
+    user: state.user,
+    isLoading: state.isLoading,
+    isInitialized: state.isInitialized,
+    error: state.error,
+    login,
+    register,
+    logout,
+    updateUser,
+    clearError,
+    
+    // Computed values
+    isAuthenticated: !!state.user,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -12,260 +274,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(false); // For login/logout operations
-  const [error, setError] = useState(null); // Add error state
-
-  // Generate a properly formatted JWT demo token
-  const createDemoJWT = () => {
-    // Demo JWT header (base64 encoded)
-    const header = btoa(JSON.stringify({
-      "alg": "HS256",
-      "typ": "JWT"
-    }));
-
-    // Demo JWT payload (base64 encoded)
-    const payload = btoa(JSON.stringify({
-      "sub": "demo@example.com",
-      "email": "demo@example.com",
-      "role": "USER",
-      "iat": Math.floor(Date.now() / 1000),
-      "exp": Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-    }));
-
-    // Demo signature (this won't be validated by backend in demo mode)
-    const signature = btoa("demo-signature-not-validated");
-
-    return `${header}.${payload}.${signature}`;
-  };
-
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
-    try {
-      console.log('🔍 Checking authentication state...');
-      setLoading(true);
-      
-      const storedToken = await storageService.get(STORAGE_KEYS.USER_TOKEN);
-      const storedUser = await storageService.get(STORAGE_KEYS.USER_DATA);
-      
-      console.log('📦 Storage check:', {
-        hasToken: !!storedToken,
-        hasUser: !!storedUser,
-        tokenType: storedToken ? 'stored' : 'none'
-      });
-
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(storedUser);
-        console.log('✅ Restored authentication from storage');
-      } else {
-        console.log('❌ No valid authentication found');
-      }
-    } catch (error) {
-      console.error('💥 Error checking auth state:', error);
-      setError('Failed to check authentication state');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (formData) => {
-  try {
-    setIsLoading(true);
-    setError(null);
-
-    const response = await fetch(`${API_CONFIG.BASE_URL}/users/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Registration failed");
-    }
-
-    const data = await response.json();
-    console.log("✅ Registration success:", data);
-
-    return data;
-  } catch (error) {
-    console.error("💥 Registration error:", error);
-    setError(error.message);
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-  const clearError = () => {
-    console.log('🧹 Clearing auth error');
-    setError(null);
-  };
-
-  const setAuthError = (errorMessage) => {
-    console.log('🚨 Setting auth error:', errorMessage);
-    setError(errorMessage);
-  };
-
-  const login = async (credentials) => {
-  try {
-    console.log('🔐 Attempting login for:', credentials.email);
-    setIsLoading(true);
-    setError(null);
-
-    const { email, password } = credentials;
-
-    if (!email || !password) {
-      throw new Error('Email and password are required');
-    }
-
-    // Call your backend login API
-    const response = await fetch(`${API_CONFIG.BASE_URL}/users/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("❌ Login failed:", errorData);
-      throw new Error(errorData.message || "Invalid credentials");
-    }
-
-    const data = await response.json();
-    console.log("✅ Login response:", data);
-
-    // Your backend should return { token, user } or similar
-    const { token, user } = data;
-
-    if (!token) {
-      throw new Error("No token received from server");
-    }
-
-    // Save to state
-    setUser(user);
-    setToken(token);
-
-    // Save to AsyncStorage
-    await storageService.set(STORAGE_KEYS.USER_TOKEN, token);
-    await storageService.set(STORAGE_KEYS.USER_DATA, user);
-
-    console.log("✅ Authentication stored");
-    return { success: true, user };
-  } catch (error) {
-    console.error("💥 Login error:", error);
-    setError(error.message);
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-  // const login = async (credentials) => {
-  //   try {
-  //     console.log('🔐 Attempting login for:', credentials.email);
-  //     setIsLoading(true);
-  //     setError(null);
-      
-  //     const { email, password } = credentials;
-      
-  //     // Demo mode - accept any credentials
-  //     if (email && password) {
-  //       const demoToken = createDemoJWT();
-  //       const demoUser = {
-  //         id: 1,
-  //         email: email,
-  //         name: 'Demo User',
-  //         role: 'USER'
-  //       };
-
-  //       console.log('🎭 Demo login successful:', {
-  //         email: demoUser.email,
-  //         tokenLength: demoToken.length,
-  //         tokenPreview: demoToken.substring(0, 50) + '...'
-  //       });
-
-  //       // Store in state
-  //       setUser(demoUser);
-  //       setToken(demoToken);
-
-  //       // Store in AsyncStorage
-  //       await storageService.set(STORAGE_KEYS.USER_TOKEN, demoToken);
-  //       await storageService.set(STORAGE_KEYS.USER_DATA, demoUser);
-
-  //       console.log('✅ Demo authentication stored');
-  //       return { success: true, user: demoUser };
-  //     } else {
-  //       throw new Error('Email and password are required');
-  //     }
-  //   } catch (error) {
-  //     console.error('💥 Login error:', error);
-  //     setError(error.message);
-  //     throw error; // Re-throw so calling component can handle it
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  const logout = async () => {
-    try {
-      console.log('🚪 Logging out...');
-      setIsLoading(true);
-      setError(null);
-      
-      // Clear state
-      setUser(null);
-      setToken(null);
-
-      // Clear storage
-      await storageService.remove(STORAGE_KEYS.USER_TOKEN);
-      await storageService.remove(STORAGE_KEYS.USER_DATA);
-
-      console.log('✅ Logout successful');
-    } catch (error) {
-      console.error('💥 Logout error:', error);
-      setError('Failed to logout');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isAuthenticated = () => {
-    return !!(user && token);
-  };
-
-  const value = {
-  user,
-  token,
-  loading,
-  isLoading,
-  error,
-  login,
-  register,   // 👈 make it available
-  logout,
-  clearError,
-  setError: setAuthError,
-  isAuthenticated: isAuthenticated(),
-  checkAuthState
-};
-
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
 };

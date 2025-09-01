@@ -1,10 +1,14 @@
-// src/navigation/AppNavigator.js - Complete navigation with all screens
-import React from 'react';
+// src/navigation/AppNavigator.js - Enhanced with Splash Screen Integration
+import React, { useState, useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { Text, View, Animated, Dimensions } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+
+// Splash Screen
+import SplashScreen from '../screens/auth/SplashScreen';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -36,27 +40,57 @@ import CreateQuote from '../screens/shared/CreateQuote';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const { width } = Dimensions.get('window');
 
-// Tab Bar Icon Component
-const TabBarIcon = ({ name, focused, theme }) => (
-  <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-    <Text style={{ 
-      fontSize: 24, 
-      color: focused ? theme.colors.primary : theme.colors.textSecondary 
-    }}>
-      {getTabIcon(name)}
-    </Text>
-  </View>
-);
+// Enhanced Tab Bar Icon Component with animations
+const TabBarIcon = ({ name, focused, theme }) => {
+  const [scaleAnim] = useState(new Animated.Value(1));
 
-// Icon mapping
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: focused ? 1.2 : 1,
+      tension: 100,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  }, [focused]);
+
+  return (
+    <Animated.View 
+      style={{ 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        transform: [{ scale: scaleAnim }],
+      }}
+    >
+      <View style={{
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: focused ? theme.colors.primary + '20' : 'transparent',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 2,
+      }}>
+        <Text style={{ 
+          fontSize: 20, 
+          color: focused ? theme.colors.primary : theme.colors.textSecondary 
+        }}>
+          {getTabIcon(name)}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+};
+
+// Enhanced Icon mapping with better icons
 const getTabIcon = (routeName) => {
   const icons = {
     Dashboard: '🏠',
     Vehicles: '🚗',
-    ServiceRequests: '🔧',
-    Services: '🔧',
-    Jobs: '🔧',
+    ServiceRequests: '🛠️',
+    Services: '🛠️',
+    Jobs: '📋',
     Quotes: '💰',
     Users: '👥',
     System: '⚙️',
@@ -65,7 +99,7 @@ const getTabIcon = (routeName) => {
   return icons[routeName] || '•';
 };
 
-// Client Tab Navigator
+// Enhanced Client Tab Navigator
 const ClientTabs = () => {
   const { theme } = useTheme();
   
@@ -81,29 +115,58 @@ const ClientTabs = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 1,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 10,
+          borderRadius: 20,
+          marginHorizontal: 16,
+          marginBottom: 16,
+          position: 'absolute',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 8,
+          },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 5,
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={ClientDashboard} />
-      <Tab.Screen name="Vehicles" component={Vehicles} />
       <Tab.Screen 
-        name="Services" 
+        name="Dashboard" 
+        component={ClientDashboard}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen 
+        name="Vehicles" 
+        component={Vehicles}
+        options={{ title: 'Vehicles' }}
+      />
+      <Tab.Screen 
+        name="ServiceRequests" 
         component={ServiceRequests} 
         options={{ title: 'Services' }} 
       />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen 
+        name="Profile" 
+        component={Profile}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 };
 
-// Mechanic Tab Navigator
+// Enhanced Mechanic Tab Navigator
 const MechanicTabs = () => {
   const { theme } = useTheme();
   
@@ -119,25 +182,58 @@ const MechanicTabs = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 1,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 10,
+          borderRadius: 20,
+          marginHorizontal: 16,
+          marginBottom: 16,
+          position: 'absolute',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 8,
+          },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 5,
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={MechanicDashboard} />
-      <Tab.Screen name="Jobs" component={JobList} />
-      <Tab.Screen name="Quotes" component={QuoteManagement} />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen 
+        name="Dashboard" 
+        component={MechanicDashboard}
+        options={{ title: 'Workshop' }}
+      />
+      <Tab.Screen 
+        name="Jobs" 
+        component={JobList}
+        options={{ title: 'Jobs' }}
+      />
+      <Tab.Screen 
+        name="Quotes" 
+        component={QuoteManagement}
+        options={{ title: 'Quotes' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={Profile}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 };
 
-// Admin Tab Navigator
+// Enhanced Admin Tab Navigator
 const AdminTabs = () => {
   const { theme } = useTheme();
   
@@ -153,25 +249,58 @@ const AdminTabs = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 1,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 10,
+          borderRadius: 20,
+          marginHorizontal: 16,
+          marginBottom: 16,
+          position: 'absolute',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 8,
+          },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 5,
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={AdminDashboard} />
-      <Tab.Screen name="System" component={SystemOverview} />
-      <Tab.Screen name="Users" component={UserManagement} />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen 
+        name="Dashboard" 
+        component={AdminDashboard}
+        options={{ title: 'Admin' }}
+      />
+      <Tab.Screen 
+        name="System" 
+        component={SystemOverview}
+        options={{ title: 'System' }}
+      />
+      <Tab.Screen 
+        name="Users" 
+        component={UserManagement}
+        options={{ title: 'Users' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={Profile}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 };
 
-// Stack Navigator for each user type
+// Enhanced Stack Navigator for each user type
 const ClientStack = () => {
   const { theme } = useTheme();
   
@@ -181,12 +310,19 @@ const ClientStack = () => {
         headerStyle: {
           backgroundColor: theme.colors.surface,
           borderBottomColor: theme.colors.border,
-          elevation: 4,
+          borderBottomWidth: 1,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
           shadowOpacity: 0.1,
+          shadowRadius: 8,
         },
         headerTintColor: theme.colors.text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: '700',
           fontSize: 18,
         },
         headerBackTitleVisible: false,
@@ -202,6 +338,10 @@ const ClientStack = () => {
                   }),
                 },
               ],
+              opacity: current.progress.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, 0.5, 1],
+              }),
             },
           };
         },
@@ -215,12 +355,24 @@ const ClientStack = () => {
       <Stack.Screen 
         name="VehicleDetails" 
         component={VehicleDetails}
-        options={{ title: 'Vehicle Details' }}
+        options={{ 
+          title: 'Vehicle Details',
+          headerStyle: {
+            backgroundColor: theme.colors.primary,
+          },
+          headerTintColor: '#fff',
+        }}
       />
       <Stack.Screen 
         name="CreateServiceRequest" 
         component={CreateServiceRequest}
-        options={{ title: 'Book Service' }}
+        options={{ 
+          title: 'Book Service',
+          headerStyle: {
+            backgroundColor: theme.colors.primary,
+          },
+          headerTintColor: '#fff',
+        }}
       />
       <Stack.Screen 
         name="ServiceDetails" 
@@ -245,16 +397,41 @@ const MechanicStack = () => {
         headerStyle: {
           backgroundColor: theme.colors.surface,
           borderBottomColor: theme.colors.border,
-          elevation: 4,
+          borderBottomWidth: 1,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
           shadowOpacity: 0.1,
+          shadowRadius: 8,
         },
         headerTintColor: theme.colors.text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: '700',
           fontSize: 18,
         },
         headerBackTitleVisible: false,
         gestureEnabled: true,
+        cardStyleInterpolator: ({ current, layouts }) => {
+          return {
+            cardStyle: {
+              transform: [
+                {
+                  translateX: current.progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [layouts.screen.width, 0],
+                  }),
+                },
+              ],
+              opacity: current.progress.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, 0.5, 1],
+              }),
+            },
+          };
+        },
       }}
     >
       <Stack.Screen 
@@ -265,12 +442,24 @@ const MechanicStack = () => {
       <Stack.Screen 
         name="JobDetails" 
         component={JobDetails}
-        options={{ title: 'Job Details' }}
+        options={{ 
+          title: 'Job Details',
+          headerStyle: {
+            backgroundColor: theme.colors.secondary,
+          },
+          headerTintColor: '#fff',
+        }}
       />
       <Stack.Screen 
         name="CreateQuote" 
         component={CreateQuote}
-        options={{ title: 'Create Quote' }}
+        options={{ 
+          title: 'Create Quote',
+          headerStyle: {
+            backgroundColor: theme.colors.secondary,
+          },
+          headerTintColor: '#fff',
+        }}
       />
       <Stack.Screen 
         name="ServiceDetails" 
@@ -295,16 +484,41 @@ const AdminStack = () => {
         headerStyle: {
           backgroundColor: theme.colors.surface,
           borderBottomColor: theme.colors.border,
-          elevation: 4,
+          borderBottomWidth: 1,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
           shadowOpacity: 0.1,
+          shadowRadius: 8,
         },
         headerTintColor: theme.colors.text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: '700',
           fontSize: 18,
         },
         headerBackTitleVisible: false,
         gestureEnabled: true,
+        cardStyleInterpolator: ({ current, layouts }) => {
+          return {
+            cardStyle: {
+              transform: [
+                {
+                  translateX: current.progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [layouts.screen.width, 0],
+                  }),
+                },
+              ],
+              opacity: current.progress.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, 0.5, 1],
+              }),
+            },
+          };
+        },
       }}
     >
       <Stack.Screen 
@@ -326,7 +540,7 @@ const AdminStack = () => {
   );
 };
 
-// Auth Stack
+// Enhanced Auth Stack with splash integration
 const AuthStack = () => {
   const { theme } = useTheme();
   
@@ -336,6 +550,11 @@ const AuthStack = () => {
         headerShown: false,
         cardStyle: { backgroundColor: theme.colors.background },
         gestureEnabled: true,
+        cardStyleInterpolator: ({ current }) => ({
+          cardStyle: {
+            opacity: current.progress,
+          },
+        }),
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
@@ -344,35 +563,71 @@ const AuthStack = () => {
   );
 };
 
-// Main App Navigator
-const AppNavigator = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+// Root Navigator with Splash Screen
+const RootNavigator = () => {
+  const { user, isLoading, isInitialized } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
 
-  // Show loading state while checking authentication
-  if (loading) {
-    return null; // Could show a splash screen component here
+  useEffect(() => {
+    // Hide splash when auth is initialized and minimum time has passed
+    if (isInitialized && !isLoading) {
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 500); // Small delay for smooth transition
+
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, isLoading]);
+
+  const handleSplashComplete = () => {
+    if (isInitialized) {
+      setShowSplash(false);
+    }
+  };
+
+  // Show splash screen during initialization
+  if (showSplash || !isInitialized) {
+    return <SplashScreen onAnimationEnd={handleSplashComplete} />;
   }
 
-  // If not authenticated, show auth stack
-  if (!isAuthenticated || !user) {
+  // Route based on authentication status and user role
+  if (!user) {
     return <AuthStack />;
   }
 
-  // Route based on user role
   switch (user.role) {
     case 'CLIENT':
       return <ClientStack />;
-    
     case 'MECHANIC':
       return <MechanicStack />;
-    
     case 'ADMIN':
       return <AdminStack />;
-    
     default:
-      // Fallback to auth if role is not recognized
       return <AuthStack />;
   }
+};
+
+// Main App Navigator with Navigation Container
+const AppNavigator = () => {
+  const { theme } = useTheme();
+
+  return (
+    <NavigationContainer
+      theme={{
+        dark: theme.isDark,
+        colors: {
+          primary: theme.colors.primary,
+          background: theme.colors.background,
+          card: theme.colors.surface,
+          text: theme.colors.text,
+          border: theme.colors.border,
+          notification: theme.colors.error,
+        },
+      }}
+    >
+      <RootNavigator />
+    </NavigationContainer>
+  );
 };
 
 export default AppNavigator;
