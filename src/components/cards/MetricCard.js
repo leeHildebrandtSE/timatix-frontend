@@ -1,195 +1,306 @@
+// Enhanced MetricCard Component
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
-const MetricCard = ({ 
-  title, 
-  value, 
-  subtitle, 
-  icon, 
-  color, 
-  onPress, 
+const { width } = Dimensions.get('window');
+
+const MetricCard = ({
+  title,
+  value,
+  icon,
+  color,
   trend,
-  trendDirection = 'up',
   size = 'medium',
-  style 
+  onPress,
+  style = {},
+  loading = false,
 }) => {
   const { theme } = useTheme();
 
-  const cardColor = color || theme.colors.primary;
-
-  const getTrendIcon = () => {
-    if (!trend) return null;
-    return trendDirection === 'up' ? '↗' : '↘';
-  };
-
-  const getTrendColor = () => {
-    if (!trend) return theme.colors.textSecondary;
-    return trendDirection === 'up' ? theme.colors.success : theme.colors.error;
-  };
-
-  const getCardStyle = () => {
-    let cardStyle = {
-      ...styles.card,
-      backgroundColor: theme.colors.surface,
-      borderColor: theme.colors.border,
-      shadowColor: theme.colors.shadow,
-    };
-
+  const getSizeStyles = () => {
     switch (size) {
       case 'small':
-        cardStyle = { ...cardStyle, ...styles.small };
-        break;
+        return {
+          container: styles.smallContainer,
+          icon: styles.smallIcon,
+          iconText: styles.smallIconText,
+          value: styles.smallValue,
+          title: styles.smallTitle,
+          trend: styles.smallTrend,
+        };
       case 'large':
-        cardStyle = { ...cardStyle, ...styles.large };
-        break;
+        return {
+          container: styles.largeContainer,
+          icon: styles.largeIcon,
+          iconText: styles.largeIconText,
+          value: styles.largeValue,
+          title: styles.largeTitle,
+          trend: styles.largeTrend,
+        };
       default:
-        cardStyle = { ...cardStyle, ...styles.medium };
+        return {
+          container: styles.mediumContainer,
+          icon: styles.mediumIcon,
+          iconText: styles.mediumIconText,
+          value: styles.mediumValue,
+          title: styles.mediumTitle,
+          trend: styles.mediumTrend,
+        };
     }
-
-    return cardStyle;
   };
 
-  const getValueStyle = () => {
-    let valueStyle = { ...styles.value };
+  const sizeStyles = getSizeStyles();
+  const isInteractive = !!onPress;
 
-    switch (size) {
-      case 'small':
-        valueStyle = { ...valueStyle, ...theme.typography.h5 };
-        break;
-      case 'large':
-        valueStyle = { ...valueStyle, ...theme.typography.h2 };
-        break;
-      default:
-        valueStyle = { ...valueStyle, ...theme.typography.h4 };
-    }
-
-    return { ...valueStyle, color: cardColor };
-  };
-
-  const CardComponent = onPress ? TouchableOpacity : View;
-
-  return (
-    <CardComponent
-      style={[getCardStyle(), style]}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
+  const cardContent = (
+    <View
+      style={[
+        styles.card,
+        sizeStyles.container,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          shadowColor: theme.colors.shadow,
+        },
+        isInteractive && styles.interactiveCard,
+        style,
+      ]}
     >
+      {/* Header with Icon and Value */}
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          {icon && (
-            <View style={[styles.iconContainer, { backgroundColor: cardColor + '20' }]}>
-              {typeof icon === 'string' ? (
-                <Text style={[styles.iconText, { color: cardColor }]}>{icon}</Text>
-              ) : (
-                icon
-              )}
-            </View>
-          )}
-          <Text style={[styles.title, theme.typography.body2]} numberOfLines={1}>
-            {title}
+        <View style={[styles.iconContainer, sizeStyles.icon, { backgroundColor: color + '20' }]}>
+          <Text style={[styles.iconText, sizeStyles.iconText]}>
+            {icon}
           </Text>
         </View>
         
-        {trend && (
-          <View style={styles.trendContainer}>
-            <Text style={[styles.trendIcon, { color: getTrendColor() }]}>
-              {getTrendIcon()}
+        <View style={styles.valueContainer}>
+          {loading ? (
+            <View style={[styles.loadingSkeleton, { backgroundColor: theme.colors.border }]} />
+          ) : (
+            <Text style={[styles.value, sizeStyles.value, { color: theme.colors.text }]}>
+              {value}
             </Text>
-            <Text style={[styles.trendValue, { color: getTrendColor() }]}>
-              {trend}
-            </Text>
-          </View>
-        )}
+          )}
+        </View>
       </View>
 
-      <View style={styles.content}>
-        <Text style={getValueStyle()} numberOfLines={1}>
-          {value}
-        </Text>
-        
-        {subtitle && (
-          <Text style={[styles.subtitle, theme.typography.caption]} numberOfLines={2}>
-            {subtitle}
+      {/* Title */}
+      <Text
+        style={[
+          styles.title,
+          sizeStyles.title,
+          { color: theme.colors.textSecondary }
+        ]}
+        numberOfLines={2}
+      >
+        {title}
+      </Text>
+
+      {/* Trend/Description */}
+      {trend && (
+        <View style={styles.trendContainer}>
+          <Text
+            style={[
+              styles.trend,
+              sizeStyles.trend,
+              { color: theme.colors.textLight }
+            ]}
+            numberOfLines={1}
+          >
+            {trend}
           </Text>
-        )}
-      </View>
-    </CardComponent>
+        </View>
+      )}
+
+      {/* Interactive Indicator */}
+      {isInteractive && (
+        <View style={[styles.interactiveIndicator, { backgroundColor: color }]}>
+          <Text style={styles.arrowIcon}>→</Text>
+        </View>
+      )}
+
+      {/* Accent Line */}
+      <View style={[styles.accentLine, { backgroundColor: color }]} />
+    </View>
   );
+
+  if (isInteractive) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        style={styles.touchableContainer}
+      >
+        {cardContent}
+      </TouchableOpacity>
+    );
+  }
+
+  return cardContent;
 };
 
 const styles = StyleSheet.create({
+  touchableContainer: {
+    // Container for touchable cards
+  },
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginVertical: 4,
-    marginHorizontal: 2,
     borderWidth: 1,
+    position: 'relative',
+    overflow: 'hidden',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  small: {
-    padding: 12,
+  interactiveCard: {
+    transform: [{ scale: 1 }],
   },
-  medium: {
-    padding: 16,
-  },
-  large: {
-    padding: 20,
-  },
+
+  // Header Section
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   iconContainer: {
-    width: 24,
-    height: 24,
     borderRadius: 12,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    alignItems: 'center',
   },
   iconText: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    // Base icon text styles
   },
-  title: {
+  valueContainer: {
     flex: 1,
-    opacity: 0.7,
-  },
-  trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendIcon: {
-    fontSize: 12,
-    marginRight: 2,
-  },
-  trendValue: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  content: {
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
   },
   value: {
     fontWeight: 'bold',
-    marginBottom: 4,
+    textAlign: 'right',
   },
-  subtitle: {
-    opacity: 0.6,
+  loadingSkeleton: {
+    height: 24,
+    width: 60,
+    borderRadius: 4,
+    opacity: 0.3,
+  },
+
+  // Title and Trend
+  title: {
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  trendContainer: {
+    marginTop: 8,
+  },
+  trend: {
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+
+  // Interactive Elements
+  interactiveIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowIcon: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  accentLine: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+  },
+
+  // Size Variants
+  // Small
+  smallContainer: {
+    padding: 12,
+    minHeight: 100,
+  },
+  smallIcon: {
+    width: 32,
+    height: 32,
+  },
+  smallIconText: {
+    fontSize: 16,
+  },
+  smallValue: {
+    fontSize: 20,
+  },
+  smallTitle: {
+    fontSize: 12,
+  },
+  smallTrend: {
+    fontSize: 10,
+  },
+
+  // Medium
+  mediumContainer: {
+    padding: 16,
+    minHeight: 120,
+  },
+  mediumIcon: {
+    width: 40,
+    height: 40,
+  },
+  mediumIconText: {
+    fontSize: 20,
+  },
+  mediumValue: {
+    fontSize: 24,
+  },
+  mediumTitle: {
+    fontSize: 14,
+  },
+  mediumTrend: {
+    fontSize: 12,
+  },
+
+  // Large
+  largeContainer: {
+    padding: 20,
+    minHeight: 140,
+  },
+  largeIcon: {
+    width: 48,
+    height: 48,
+  },
+  largeIconText: {
+    fontSize: 24,
+  },
+  largeValue: {
+    fontSize: 32,
+  },
+  largeTitle: {
+    fontSize: 16,
+  },
+  largeTrend: {
+    fontSize: 14,
   },
 });
 

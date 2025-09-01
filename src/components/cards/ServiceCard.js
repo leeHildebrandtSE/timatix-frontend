@@ -1,57 +1,329 @@
+// Enhanced ServiceCard Component
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import StatusBadge from '../common/StatusBadge';
+import StatusBadge from '../../components/common/StatusBadge';
+import Button from '../../components/common/Button';
+import { formatDate, formatTime, formatCurrency } from '../../utils/formatters';
+import { SERVICE_STATUS } from '../../utils/constants';
 
-const ServiceCard = ({ service, onPress, onViewQuote, onAcceptQuote, onDeclineQuote, userRole = 'CLIENT' }) => {
+const { width } = Dimensions.get('window');
+
+const ServiceCard = ({
+  service,
+  onPress,
+  onAcceptQuote,
+  onDeclineQuote,
+  onViewQuote,
+  onApprove,
+  userRole = 'CLIENT',
+  showAdminActions = false,
+  style = {},
+}) => {
   const { theme } = useTheme();
 
-  const handlePress = () => {
-    if (onPress) {
-      onPress(service);
+  const getServiceIcon = (serviceType) => {
+    const iconMap = {
+      'Oil Change': '🛢️',
+      'Brake Service': '🚗',
+      'Tire Replacement': '🛞',
+      'Engine Diagnostic': '🔧',
+      'General Maintenance': '⚙️',
+      'Battery Replacement': '🔋',
+      'Air Filter': '💨',
+      'Transmission': '⚙️',
+    };
+    return iconMap[serviceType] || '🔧';
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'URGENT': return theme.colors.error;
+      case 'HIGH': return '#FF8C00';
+      case 'NORMAL': return theme.colors.primary;
+      case 'LOW': return theme.colors.textSecondary;
+      default: return theme.colors.primary;
     }
   };
 
-  const handleViewQuote = (e) => {
-    e.stopPropagation();
-    if (onViewQuote) {
-      onViewQuote(service);
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
+        <View style={[styles.serviceIconContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+          <Text style={styles.serviceIcon}>
+            {getServiceIcon(service.serviceType)}
+          </Text>
+        </View>
+        
+        <View style={styles.serviceInfo}>
+          <Text style={[styles.serviceType, theme.typography.h6]} numberOfLines={1}>
+            {service.serviceType}
+          </Text>
+          {service.vehicle && (
+            <Text style={[styles.vehicleInfo, theme.typography.body2]} numberOfLines={1}>
+              {service.vehicle.year} {service.vehicle.make} {service.vehicle.model}
+            </Text>
+          )}
+        </View>
+      </View>
+      
+      <View style={styles.headerRight}>
+        <StatusBadge status={service.status} />
+        {service.priority && (
+          <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(service.priority) }]}>
+            <Text style={styles.priorityText}>{service.priority}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderDetails = () => (
+    <View style={styles.details}>
+      <View style={styles.detailRow}>
+        <View style={styles.detailItem}>
+          <Text style={styles.detailIcon}>📅</Text>
+          <Text style={[styles.detailText, theme.typography.body2]}>
+            {formatDate(service.preferredDate)}
+          </Text>
+        </View>
+        
+        <View style={styles.detailItem}>
+          <Text style={styles.detailIcon}>🕒</Text>
+          <Text style={[styles.detailText, theme.typography.body2]}>
+            {formatTime(service.preferredTime)}
+          </Text>
+        </View>
+      </View>
+      
+      {service.location && (
+        <View style={styles.detailRow}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailIcon}>📍</Text>
+            <Text style={[styles.detailText, theme.typography.body2]}>
+              {service.location === 'WORKSHOP' ? 'Workshop' : 'Mobile Service'}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Client/Mechanic Info */}
+      {userRole === 'MECHANIC' && service.client && (
+        <View style={styles.detailRow}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailIcon}>👤</Text>
+            <Text style={[styles.detailText, theme.typography.body2]}>
+              {service.client.name}
+            </Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <Text style={styles.detailIcon}>📞</Text>
+            <Text style={[styles.detailText, theme.typography.body2]}>
+              {service.client.phone}
+            </Text>
+          </View>
+        </View>
+      )}
+      
+      {userRole === 'CLIENT' && service.assignedMechanic && (
+        <View style={styles.detailRow}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailIcon}>🔧</Text>
+            <Text style={[styles.detailText, theme.typography.body2]}>
+              {service.assignedMechanic.name}
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderDescription = () => {
+    if (!service.description && !service.notes) return null;
+    
+    return (
+      <View style={[styles.descriptionContainer, { backgroundColor: theme.colors.background }]}>
+        {service.description && (
+          <Text style={[styles.description, theme.typography.body2]} numberOfLines={2}>
+            {service.description}
+          </Text>
+        )}
+        {service.notes && (
+          <Text style={[styles.notes, theme.typography.caption]} numberOfLines={1}>
+            Note: {service.notes}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderQuoteInfo = () => {
+    if (!service.quote) return null;
+    
+    return (
+      <View style={[styles.quoteContainer, { backgroundColor: theme.colors.success + '10' }]}>
+        <View style={styles.quoteHeader}>
+          <Text style={[styles.quoteLabel, theme.typography.caption]}>
+            Quote Amount
+          </Text>
+          <Text style={[styles.quoteAmount, theme.typography.h6, { color: theme.colors.success }]}>
+            {formatCurrency(service.quote.totalAmount)}
+          </Text>
+        </View>
+        
+        {service.quote.expiresAt && (
+          <Text style={[styles.quoteExpiry, theme.typography.caption]}>
+            Expires: {formatDate(service.quote.expiresAt)}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderActions = () => {
+    const actions = [];
+    
+    // Client Actions
+    if (userRole === 'CLIENT') {
+      if (service.status === SERVICE_STATUS.QUOTE_SENT) {
+        actions.push(
+          <Button
+            key="accept"
+            title="Accept Quote"
+            onPress={() => onAcceptQuote?.(service)}
+            size="small"
+            style={[styles.actionButton, styles.acceptButton]}
+          />,
+          <Button
+            key="decline"
+            title="Decline"
+            onPress={() => onDeclineQuote?.(service)}
+            size="small"
+            variant="outline"
+            style={[styles.actionButton, styles.declineButton]}
+          />
+        );
+      }
+      
+      if (service.quote && onViewQuote) {
+        actions.push(
+          <Button
+            key="viewQuote"
+            title="View Quote"
+            onPress={() => onViewQuote?.(service)}
+            size="small"
+            variant="ghost"
+            style={styles.actionButton}
+          />
+        );
+      }
     }
-  };
-
-  const handleAcceptQuote = (e) => {
-    e.stopPropagation();
-    if (onAcceptQuote) {
-      onAcceptQuote(service);
+    
+    // Admin Actions
+    if (showAdminActions && onApprove) {
+      actions.push(
+        <Button
+          key="approve"
+          title="Approve"
+          onPress={() => onApprove?.(service)}
+          size="small"
+          variant="success"
+          style={styles.actionButton}
+        />
+      );
     }
-  };
-
-  const handleDeclineQuote = (e) => {
-    e.stopPropagation();
-    if (onDeclineQuote) {
-      onDeclineQuote(service);
+    
+    // Mechanic Actions
+    if (userRole === 'MECHANIC') {
+      if (service.status === SERVICE_STATUS.PENDING_QUOTE) {
+        actions.push(
+          <Button
+            key="createQuote"
+            title="Create Quote"
+            onPress={() => onPress?.(service)}
+            size="small"
+            style={styles.actionButton}
+          />
+        );
+      }
+      
+      if (service.status === SERVICE_STATUS.CONFIRMED) {
+        actions.push(
+          <Button
+            key="start"
+            title="Start Job"
+            onPress={() => onPress?.(service)}
+            size="small"
+            variant="success"
+            style={styles.actionButton}
+          />
+        );
+      }
+      
+      if (service.status === SERVICE_STATUS.IN_PROGRESS) {
+        actions.push(
+          <Button
+            key="complete"
+            title="Complete"
+            onPress={() => onPress?.(service)}
+            size="small"
+            variant="success"
+            style={styles.actionButton}
+          />
+        );
+      }
     }
+    
+    if (actions.length === 0) return null;
+    
+    return (
+      <View style={styles.actionsContainer}>
+        {actions}
+      </View>
+    );
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  const renderProgressIndicator = () => {
+    const statusOrder = [
+      SERVICE_STATUS.PENDING_QUOTE,
+      SERVICE_STATUS.QUOTE_SENT,
+      SERVICE_STATUS.APPROVED,
+      SERVICE_STATUS.CONFIRMED,
+      SERVICE_STATUS.IN_PROGRESS,
+      SERVICE_STATUS.COMPLETED
+    ];
+    
+    const currentIndex = statusOrder.indexOf(service.status);
+    if (currentIndex === -1) return null;
+    
+    const progress = (currentIndex + 1) / statusOrder.length;
+    
+    return (
+      <View style={styles.progressContainer}>
+        <View style={[styles.progressBackground, { backgroundColor: theme.colors.border }]}>
+          <View 
+            style={[
+              styles.progressFill, 
+              { 
+                backgroundColor: theme.colors.primary,
+                width: `${progress * 100}%`
+              }
+            ]} 
+          />
+        </View>
+        <Text style={[styles.progressText, theme.typography.caption]}>
+          Step {currentIndex + 1} of {statusOrder.length}
+        </Text>
+      </View>
+    );
   };
-
-  const formatTime = (timeString) => {
-    if (!timeString) return 'Not set';
-    return new Date(`1970-01-01T${timeString}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
-
-  const showQuoteActions = service.status === 'QUOTE_SENT' && userRole === 'CLIENT';
 
   return (
     <TouchableOpacity
@@ -62,205 +334,206 @@ const ServiceCard = ({ service, onPress, onViewQuote, onAcceptQuote, onDeclineQu
           borderColor: theme.colors.border,
           shadowColor: theme.colors.shadow,
         },
+        style,
       ]}
-      onPress={handlePress}
+      onPress={() => onPress?.(service)}
       activeOpacity={0.7}
     >
-      <View style={styles.header}>
-        <View style={styles.serviceInfo}>
-          <Text style={[styles.serviceType, theme.typography.h6]}>
-            {service.serviceType || service.selectedService}
-          </Text>
-          <Text style={[styles.vehicleInfo, theme.typography.body2]}>
-            {service.vehicle ? 
-              `${service.vehicle.year} ${service.vehicle.make} ${service.vehicle.model}` :
-              'Vehicle information not available'
-            }
-          </Text>
-        </View>
-        
-        <StatusBadge status={service.status} size="small" />
-      </View>
-
-      <View style={styles.details}>
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, theme.typography.caption]}>Date:</Text>
-          <Text style={[styles.detailValue, theme.typography.body2]}>
-            {formatDate(service.preferredDate)}
-          </Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, theme.typography.caption]}>Time:</Text>
-          <Text style={[styles.detailValue, theme.typography.body2]}>
-            {formatTime(service.preferredTime)}
-          </Text>
-        </View>
-
-        {service.quote && (
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, theme.typography.caption]}>Quote:</Text>
-            <Text style={[styles.detailValue, theme.typography.body2, styles.quoteAmount]}>
-              R {service.quote.totalAmount?.toFixed(2) || '0.00'}
-            </Text>
-          </View>
-        )}
-
-        {service.assignedMechanic && (
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, theme.typography.caption]}>Mechanic:</Text>
-            <Text style={[styles.detailValue, theme.typography.body2]}>
-              {service.assignedMechanic.name}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {service.notes && (
-        <View style={styles.notesSection}>
-          <Text style={[styles.notesLabel, theme.typography.caption]}>Notes:</Text>
-          <Text style={[styles.notesText, theme.typography.body2]} numberOfLines={2}>
-            {service.notes}
-          </Text>
-        </View>
-      )}
-
-      {showQuoteActions && (
-        <View style={styles.quoteActions}>
-          <TouchableOpacity
-            style={[styles.quoteButton, styles.viewButton, { borderColor: theme.colors.primary }]}
-            onPress={handleViewQuote}
-          >
-            <Text style={[styles.quoteButtonText, { color: theme.colors.primary }]}>
-              View Quote
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.quoteButton, styles.acceptButton, { backgroundColor: theme.colors.success }]}
-            onPress={handleAcceptQuote}
-          >
-            <Text style={[styles.quoteButtonText, { color: theme.colors.white }]}>
-              Accept
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.quoteButton, styles.declineButton, { backgroundColor: theme.colors.error }]}
-            onPress={handleDeclineQuote}
-          >
-            <Text style={[styles.quoteButtonText, { color: theme.colors.white }]}>
-              Decline
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <View style={styles.footer}>
-        <Text style={[styles.requestDate, theme.typography.caption]}>
-          Requested: {formatDate(service.createdAt)}
-        </Text>
-      </View>
+      {/* Header */}
+      {renderHeader()}
+      
+      {/* Details */}
+      {renderDetails()}
+      
+      {/* Description */}
+      {renderDescription()}
+      
+      {/* Quote Info */}
+      {renderQuoteInfo()}
+      
+      {/* Progress Indicator */}
+      {renderProgressIndicator()}
+      
+      {/* Actions */}
+      {renderActions()}
+      
+      {/* Status Accent Line */}
+      <View style={[styles.statusAccent, { backgroundColor: getPriorityColor(service.priority) }]} />
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginVertical: 6,
-    marginHorizontal: 2,
+    marginBottom: 12,
     borderWidth: 1,
+    position: 'relative',
+    overflow: 'hidden',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 6,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  serviceInfo: {
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
     marginRight: 12,
   },
+  headerRight: {
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  serviceIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  serviceIcon: {
+    fontSize: 20,
+  },
+  serviceInfo: {
+    flex: 1,
+  },
   serviceType: {
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
   vehicleInfo: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  priorityText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Details
   details: {
+    gap: 8,
     marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: 16,
   },
-  detailLabel: {
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     flex: 1,
   },
-  detailValue: {
-    flex: 2,
-    textAlign: 'right',
+  detailIcon: {
+    fontSize: 14,
+    width: 16,
   },
-  quoteAmount: {
-    fontWeight: '600',
-    color: '#4CAF50',
+  detailText: {
+    flex: 1,
+    fontWeight: '500',
   },
-  notesSection: {
+
+  // Description
+  descriptionContainer: {
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
   },
-  notesLabel: {
+  description: {
+    lineHeight: 20,
     marginBottom: 4,
   },
-  notesText: {
+  notes: {
+    opacity: 0.7,
     fontStyle: 'italic',
   },
-  quoteActions: {
+
+  // Quote
+  quoteContainer: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  quoteHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 8,
-  },
-  quoteButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 4,
   },
-  viewButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-  },
-  acceptButton: {
-    // backgroundColor set inline
-  },
-  declineButton: {
-    // backgroundColor set inline
-  },
-  quoteButtonText: {
-    fontSize: 12,
+  quoteLabel: {
+    opacity: 0.8,
     fontWeight: '600',
   },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    paddingTop: 8,
+  quoteAmount: {
+    fontWeight: 'bold',
   },
-  requestDate: {
+  quoteExpiry: {
+    opacity: 0.7,
+  },
+
+  // Progress
+  progressContainer: {
+    marginBottom: 12,
+  },
+  progressBackground: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  progressText: {
+    opacity: 0.7,
     textAlign: 'center',
+  },
+
+  // Actions
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  actionButton: {
+    flex: 1,
+    minWidth: 80,
+  },
+  acceptButton: {
+    // Styles applied inline
+  },
+  declineButton: {
+    // Styles applied inline
+  },
+
+  // Status Accent
+  statusAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
 });
 

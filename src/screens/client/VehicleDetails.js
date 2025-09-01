@@ -23,27 +23,6 @@ import { vehiclesService } from '../../services/vehicles';
 import { serviceRequestsService } from '../../services/serviceRequestsService';
 import { formatDate, formatMileage, formatCurrency } from '../../utils/formatters';
 
-const [vehicleMakes, setVehicleMakes] = useState([]);
-
-useEffect(() => {
-  fetchVehicleMakes();
-}, []);
-
-const fetchVehicleMakes = async () => {
-  try {
-    const makes = await vehiclesService.getVehicleMakes(); // new API call
-    setVehicleMakes(makes); // assumes API returns array of { make: 'TOYOTA' } objects
-  } catch (error) {
-    console.error('Error fetching vehicle makes:', error);
-    // fallback list if API fails
-    setVehicleMakes([
-      { make: 'TOYOTA' },
-      { make: 'BMW' },
-      { make: 'FORD' },
-    ]);
-  }
-};
-
 const VehicleDetails = () => {
   const route = useRoute();
   const navigation = useNavigation();
@@ -61,12 +40,35 @@ const VehicleDetails = () => {
   } = useApp();
   const { theme } = useTheme();
   
+  // Move vehicleMakes state inside the component
+  const [vehicleMakes, setVehicleMakes] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [vehicle, setVehicle] = useState(null);
   const [serviceHistory, setServiceHistory] = useState([]);
   const [maintenanceReminders, setMaintenanceReminders] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+
+  // Move fetchVehicleMakes inside the component
+  const fetchVehicleMakes = async () => {
+    try {
+      const makes = await vehiclesService.getVehicleMakes();
+      setVehicleMakes(makes);
+    } catch (error) {
+      console.error('Error fetching vehicle makes:', error);
+      // fallback list if API fails
+      setVehicleMakes([
+        { make: 'TOYOTA' },
+        { make: 'BMW' },
+        { make: 'FORD' },
+      ]);
+    }
+  };
+
+  // Move useEffect inside the component
+  useEffect(() => {
+    fetchVehicleMakes();
+  }, []);
 
   useEffect(() => {
     loadVehicleDetails();
@@ -609,7 +611,6 @@ const VehicleDetails = () => {
               loading={formLoading}
               initialData={vehicle}
               isEditing={true}
-              vehicleMakes={vehicleMakes}
             />
           </ScrollView>
         </SafeAreaView>
@@ -618,6 +619,7 @@ const VehicleDetails = () => {
   );
 };
 
+// ... (styles remain the same)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
