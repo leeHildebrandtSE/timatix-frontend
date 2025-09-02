@@ -1,9 +1,8 @@
-// src/context/AppContext.js - Enhanced version with better error handling
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+// src/context/AppContext.js - CLEAN VERSION - NO INFINITE LOOPS
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { SERVICE_STATUS } from '../utils/constants';
 
-// Your existing initialState and mock data generators remain the same...
 const initialState = {
   vehicles: [],
   serviceRequests: [],
@@ -16,7 +15,7 @@ const initialState = {
   initialized: false,
 };
 
-// All your existing mock data generators (keeping them as-is)
+// Mock data generators
 const generateMockVehicles = (userId) => [
   {
     id: '1',
@@ -185,7 +184,7 @@ const generateMockNotifications = (userId) => [
   },
 ];
 
-// Your existing action types remain the same...
+// Action types
 const APP_ACTIONS = {
   SET_LOADING: 'SET_LOADING',
   SET_ERROR: 'SET_ERROR',
@@ -218,7 +217,7 @@ const APP_ACTIONS = {
   CLEAR_NOTIFICATIONS: 'CLEAR_NOTIFICATIONS',
 };
 
-// Your existing reducer remains the same...
+// Reducer
 const appReducer = (state, action) => {
   switch (action.type) {
     case APP_ACTIONS.SET_LOADING:
@@ -259,9 +258,10 @@ const appReducer = (state, action) => {
 
     case APP_ACTIONS.RESET_STATE:
       console.log('🔄 Resetting app state');
-      return initialState;
+      return {
+        ...initialState, // This prevents the loop
+      };
 
-    // All your existing cases remain the same...
     case APP_ACTIONS.SET_VEHICLES:
       return {
         ...state,
@@ -371,30 +371,31 @@ const appReducer = (state, action) => {
   }
 };
 
+// Context
 const AppContext = createContext();
 
+// Provider - FIXED VERSION
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { isAuthenticated, user } = useAuth();
 
-  // Initialize mock data - enhanced with better logging
-  const initializeMockData = useCallback((userData) => {
-    if (!userData) {
-      console.log('⚠️ No user data provided for mock initialization');
-      return;
-    }
-
-    console.log('🎭 Initializing mock data for user:', {
-      id: userData.id,
-      email: userData.email,
-      role: userData.role
+  // FIXED: Single initialization effect - no infinite loop
+  useEffect(() => {
+    console.log('🔍 AppContext useEffect triggered:', {
+      isAuthenticated,
+      hasUser: !!user,
+      initialized: state.initialized,
+      userRole: user?.role
     });
 
-    try {
-      const mockVehicles = userData.role === 'CLIENT' ? generateMockVehicles(userData.id) : [];
-      const mockServiceRequests = generateMockServiceRequests(userData.id, userData.role);
+    // Initialize only once when user logs in
+    if (isAuthenticated && user?.id && !state.initialized) {
+      console.log('🚀 Initializing mock data directly...');
+      
+      const mockVehicles = user.role === 'CLIENT' ? generateMockVehicles(user.id) : [];
+      const mockServiceRequests = generateMockServiceRequests(user.id, user.role);
       const mockUsers = generateMockUsers();
-      const mockNotifications = generateMockNotifications(userData.id);
+      const mockNotifications = generateMockNotifications(user.id);
 
       dispatch({
         type: APP_ACTIONS.INITIALIZE_MOCK_DATA,
@@ -407,55 +408,33 @@ export const AppProvider = ({ children }) => {
       });
 
       console.log('✅ Mock data initialized successfully');
-    } catch (error) {
-      console.error('💥 Error initializing mock data:', error);
-      dispatch({
-        type: APP_ACTIONS.SET_ERROR,
-        payload: `Failed to initialize data: ${error.message}`
-      });
     }
-  }, []);
+  }, [isAuthenticated, user?.id, user?.role, state.initialized]);
 
-  // Initialize data when user changes
-  useEffect(() => {
-    console.log('🔍 AppContext useEffect triggered:', {
-      isAuthenticated,
-      hasUser: !!user,
-      initialized: state.initialized,
-      userRole: user?.role
-    });
-
-    if (isAuthenticated && user && !state.initialized) {
-      console.log('🚀 Triggering mock data initialization...');
-      initializeMockData(user);
-    }
-  }, [isAuthenticated, user, state.initialized, initializeMockData]);
-
-  // Reset state when user logs out
+  // FIXED: Reset only when going from authenticated to not authenticated
   useEffect(() => {
     if (!isAuthenticated && state.initialized) {
       console.log('👋 User logged out, resetting app state');
       dispatch({ type: APP_ACTIONS.RESET_STATE });
     }
-  }, [isAuthenticated, state.initialized]);
+  }, [isAuthenticated]); // Remove state.initialized to prevent loop
 
-  // Enhanced error handling with logging
-  const setError = useCallback((error) => {
+  // Action creators
+  const setLoading = (loading) => {
+    dispatch({ type: APP_ACTIONS.SET_LOADING, payload: loading });
+  };
+
+  const setError = (error) => {
     console.error('🚨 AppContext Error:', error);
     dispatch({ type: APP_ACTIONS.SET_ERROR, payload: error });
-  }, []);
+  };
 
-  const clearError = useCallback(() => {
+  const clearError = () => {
     console.log('🧹 Clearing AppContext error');
     dispatch({ type: APP_ACTIONS.CLEAR_ERROR });
-  }, []);
+  };
 
-  // All your existing action creators remain the same...
-  const setLoading = useCallback((loading) => {
-    dispatch({ type: APP_ACTIONS.SET_LOADING, payload: loading });
-  }, []);
-
-  const addVehicle = useCallback((vehicle) => {
+  const addVehicle = (vehicle) => {
     const newVehicle = {
       ...vehicle,
       id: Date.now().toString(),
@@ -463,17 +442,17 @@ export const AppProvider = ({ children }) => {
       createdAt: new Date().toISOString(),
     };
     dispatch({ type: APP_ACTIONS.ADD_VEHICLE, payload: newVehicle });
-  }, [user?.id]);
+  };
 
-  const updateVehicle = useCallback((vehicle) => {
+  const updateVehicle = (vehicle) => {
     dispatch({ type: APP_ACTIONS.UPDATE_VEHICLE, payload: vehicle });
-  }, []);
+  };
 
-  const deleteVehicle = useCallback((vehicleId) => {
+  const deleteVehicle = (vehicleId) => {
     dispatch({ type: APP_ACTIONS.DELETE_VEHICLE, payload: vehicleId });
-  }, []);
+  };
 
-  const addServiceRequest = useCallback((request) => {
+  const addServiceRequest = (request) => {
     const newRequest = {
       ...request,
       id: Date.now().toString(),
@@ -481,17 +460,17 @@ export const AppProvider = ({ children }) => {
       createdAt: new Date().toISOString(),
     };
     dispatch({ type: APP_ACTIONS.ADD_SERVICE_REQUEST, payload: newRequest });
-  }, [user?.id]);
+  };
 
-  const updateServiceRequest = useCallback((request) => {
+  const updateServiceRequest = (request) => {
     dispatch({ type: APP_ACTIONS.UPDATE_SERVICE_REQUEST, payload: request });
-  }, []);
+  };
 
-  const deleteServiceRequest = useCallback((requestId) => {
+  const deleteServiceRequest = (requestId) => {
     dispatch({ type: APP_ACTIONS.DELETE_SERVICE_REQUEST, payload: requestId });
-  }, []);
+  };
 
-  const addNotification = useCallback((notification) => {
+  const addNotification = (notification) => {
     const notificationWithId = {
       ...notification,
       id: Date.now().toString(),
@@ -500,28 +479,28 @@ export const AppProvider = ({ children }) => {
       userId: user?.id,
     };
     dispatch({ type: APP_ACTIONS.ADD_NOTIFICATION, payload: notificationWithId });
-  }, [user?.id]);
+  };
 
-  const markNotificationRead = useCallback((notificationId) => {
+  const markNotificationRead = (notificationId) => {
     dispatch({ type: APP_ACTIONS.MARK_NOTIFICATION_READ, payload: notificationId });
-  }, []);
+  };
 
-  const clearNotifications = useCallback(() => {
+  const clearNotifications = () => {
     dispatch({ type: APP_ACTIONS.CLEAR_NOTIFICATIONS });
-  }, []);
+  };
 
-  // Helper functions remain the same...
-  const getVehicleById = useCallback((vehicleId) => {
+  // Helper functions
+  const getVehicleById = (vehicleId) => {
     return (state.vehicles || []).find(vehicle => vehicle.id === vehicleId);
-  }, [state.vehicles]);
+  };
 
-  const getServiceRequestById = useCallback((requestId) => {
+  const getServiceRequestById = (requestId) => {
     return (state.serviceRequests || []).find(request => request.id === requestId);
-  }, [state.serviceRequests]);
+  };
 
-  const getUnreadNotificationCount = useCallback(() => {
+  const getUnreadNotificationCount = () => {
     return (state.notifications || []).filter(notification => !notification.read).length;
-  }, [state.notifications]);
+  };
 
   const value = {
     // State
@@ -533,25 +512,25 @@ export const AppProvider = ({ children }) => {
     clearError,
     
     // Vehicle actions
-    setVehicles: useCallback((vehicles) => dispatch({ type: APP_ACTIONS.SET_VEHICLES, payload: vehicles }), []),
+    setVehicles: (vehicles) => dispatch({ type: APP_ACTIONS.SET_VEHICLES, payload: vehicles }),
     addVehicle,
     updateVehicle,
     deleteVehicle,
     
     // Service request actions
-    setServiceRequests: useCallback((requests) => dispatch({ type: APP_ACTIONS.SET_SERVICE_REQUESTS, payload: requests }), []),
+    setServiceRequests: (requests) => dispatch({ type: APP_ACTIONS.SET_SERVICE_REQUESTS, payload: requests }),
     addServiceRequest,
     updateServiceRequest,
     deleteServiceRequest,
     
     // User actions  
-    setUsers: useCallback((users) => dispatch({ type: APP_ACTIONS.SET_USERS, payload: users }), []),
-    addUser: useCallback((user) => dispatch({ type: APP_ACTIONS.ADD_USER, payload: user }), []),
-    updateUser: useCallback((user) => dispatch({ type: APP_ACTIONS.UPDATE_USER, payload: user }), []),
-    deleteUser: useCallback((userId) => dispatch({ type: APP_ACTIONS.DELETE_USER, payload: userId }), []),
+    setUsers: (users) => dispatch({ type: APP_ACTIONS.SET_USERS, payload: users }),
+    addUser: (user) => dispatch({ type: APP_ACTIONS.ADD_USER, payload: user }),
+    updateUser: (user) => dispatch({ type: APP_ACTIONS.UPDATE_USER, payload: user }),
+    deleteUser: (userId) => dispatch({ type: APP_ACTIONS.DELETE_USER, payload: userId }),
     
     // Notification actions
-    setNotifications: useCallback((notifications) => dispatch({ type: APP_ACTIONS.SET_NOTIFICATIONS, payload: notifications }), []),
+    setNotifications: (notifications) => dispatch({ type: APP_ACTIONS.SET_NOTIFICATIONS, payload: notifications }),
     addNotification,
     markNotificationRead,
     clearNotifications,
@@ -569,6 +548,7 @@ export const AppProvider = ({ children }) => {
   );
 };
 
+// Hook
 export const useApp = () => {
   const context = useContext(AppContext);
   

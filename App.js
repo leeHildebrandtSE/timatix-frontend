@@ -47,6 +47,7 @@ const App = () => {
     console.log('🔧 Development Mode:', __DEV__);
   }, []);
 
+  // In your App.js, replace the return statement with:
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
@@ -71,7 +72,7 @@ const App = () => {
                     translucent={false}
                   />
                   <OfflineNotice />
-                  <RootNavigator />
+                  <RoleBasedNavigator />
                 </NavigationContainer>
               </AppProvider>
             </AuthProvider>
@@ -79,34 +80,7 @@ const App = () => {
         </ThemeProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
-  );
-};
-
-const RootNavigator = () => {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        gestureEnabled: true,
-        cardStyleInterpolator: ({ current, layouts }) => {
-          return {
-            cardStyle: {
-              transform: [
-                {
-                  translateX: current.progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [layouts.screen.width, 0],
-                  }),
-                },
-              ],
-            },
-          };
-        },
-      }}
-    >
-      <Stack.Screen name="Main" component={RoleBasedNavigator} />
-    </Stack.Navigator>
-  );
+  )
 };
 
 export default App;

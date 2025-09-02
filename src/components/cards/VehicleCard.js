@@ -28,7 +28,7 @@ const VehicleCard = ({
       return { uri: vehicle.image };
     }
     // Return a default car image or placeholder
-    return require('../../assets/images/car-placeholder.png'); // You'll need to add this
+    return require('../../../assets/images/car-placeholder.jpg'); // You'll need to add this
   };
 
   const renderVehicleImage = () => (

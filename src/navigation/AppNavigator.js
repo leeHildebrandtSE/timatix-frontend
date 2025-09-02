@@ -110,6 +110,28 @@ const ClientTabs = () => {
         tabBarIcon: ({ focused }) => (
           <TabBarIcon name={route.name} focused={focused} theme={theme} />
         ),
+        tabBarLabel: ({ focused, color }) => {
+          const getLabel = (routeName) => {
+            const labels = {
+              Dashboard: 'Home',
+              Vehicles: 'Vehicles',
+              ServiceRequests: 'Services',
+              Profile: 'Profile',
+            };
+            return labels[routeName] || routeName;
+          };
+
+          return (
+            <Text style={{ 
+              color, 
+              fontSize: 11, 
+              fontWeight: '600', 
+              marginTop: 4 
+            }}>
+              {getLabel(route.name)}
+            </Text>
+          );
+        },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textSecondary,
         tabBarStyle: {
@@ -142,26 +164,10 @@ const ClientTabs = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={ClientDashboard}
-        options={{ title: 'Home' }}
-      />
-      <Tab.Screen 
-        name="Vehicles" 
-        component={Vehicles}
-        options={{ title: 'Vehicles' }}
-      />
-      <Tab.Screen 
-        name="ServiceRequests" 
-        component={ServiceRequests} 
-        options={{ title: 'Services' }} 
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={Profile}
-        options={{ title: 'Profile' }}
-      />
+      <Tab.Screen name="Dashboard" component={ClientDashboard} />
+      <Tab.Screen name="Vehicles" component={Vehicles} />
+      <Tab.Screen name="ServiceRequests" component={ServiceRequests} />
+      <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
 };

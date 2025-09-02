@@ -1,10 +1,13 @@
-// src/navigation/RoleBasedNavigator.js - Fixed version with all missing screens
+// src/navigation/RoleBasedNavigator.js - FIXED VERSION
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Text, View, ActivityIndicator } from 'react-native'; // Added missing imports
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+
+// Import SplashScreen
+import SplashScreen from '../screens/auth/SplashScreen';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -28,7 +31,7 @@ import AdminDashboard from '../screens/admin/AdminDashboard';
 import SystemOverview from '../screens/admin/SystemOverview';
 import UserManagement from '../screens/admin/UserManagement';
 
-// Shared/Common Screens (create these placeholders)
+// Shared/Common Screens
 import ServiceDetails from '../screens/shared/ServiceDetails';
 import QuoteDetails from '../screens/shared/QuoteDetails';
 import JobDetails from '../screens/shared/JobDetails';
@@ -52,6 +55,29 @@ const getTabIcon = (routeName, focused) => {
   return icons[routeName] || '•';
 };
 
+// Loading Component with proper Text wrapper
+const LoadingScreen = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <View style={{ 
+      flex: 1, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      backgroundColor: theme?.colors?.background || '#FFFFFF'
+    }}>
+      <ActivityIndicator size="large" color={theme?.colors?.primary || '#007AFF'} />
+      <Text style={{ 
+        marginTop: 16,
+        color: theme?.colors?.text || '#000000',
+        fontSize: 16
+      }}>
+        Loading...
+      </Text>
+    </View>
+  );
+};
+
 // Client Tab Navigator
 const ClientTabs = () => {
   const { theme } = useTheme();
@@ -73,14 +99,26 @@ const ClientTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={ClientDashboard} />
-      <Tab.Screen name="Vehicles" component={Vehicles} />
+      <Tab.Screen 
+        name="Dashboard" 
+        component={ClientDashboard}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen 
+        name="Vehicles" 
+        component={Vehicles}
+        options={{ title: 'Vehicles' }}
+      />
       <Tab.Screen 
         name="ServiceRequests" 
         component={ServiceRequests} 
         options={{ title: 'Services' }} 
       />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen 
+        name="Profile" 
+        component={Profile}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 };
@@ -106,10 +144,26 @@ const MechanicTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={MechanicDashboard} />
-      <Tab.Screen name="Jobs" component={JobList} />
-      <Tab.Screen name="Quotes" component={QuoteManagement} />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen 
+        name="Dashboard" 
+        component={MechanicDashboard}
+        options={{ title: 'Workshop' }}
+      />
+      <Tab.Screen 
+        name="Jobs" 
+        component={JobList}
+        options={{ title: 'Jobs' }}
+      />
+      <Tab.Screen 
+        name="Quotes" 
+        component={QuoteManagement}
+        options={{ title: 'Quotes' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={Profile}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 };
@@ -135,10 +189,26 @@ const AdminTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={AdminDashboard} />
-      <Tab.Screen name="System" component={SystemOverview} />
-      <Tab.Screen name="Users" component={UserManagement} />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen 
+        name="Dashboard" 
+        component={AdminDashboard}
+        options={{ title: 'Admin' }}
+      />
+      <Tab.Screen 
+        name="System" 
+        component={SystemOverview}
+        options={{ title: 'System' }}
+      />
+      <Tab.Screen 
+        name="Users" 
+        component={UserManagement}
+        options={{ title: 'Users' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={Profile}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 };
@@ -158,6 +228,7 @@ const ClientStack = () => {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen 
@@ -168,34 +239,22 @@ const ClientStack = () => {
       <Stack.Screen 
         name="VehicleDetails" 
         component={VehicleDetails}
-        options={{ 
-          title: 'Vehicle Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Vehicle Details' }}
       />
       <Stack.Screen 
         name="CreateServiceRequest" 
         component={CreateServiceRequest}
-        options={{ 
-          title: 'Book Service',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Book Service' }}
       />
       <Stack.Screen 
         name="ServiceDetails" 
         component={ServiceDetails}
-        options={{ 
-          title: 'Service Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Service Details' }}
       />
       <Stack.Screen 
         name="QuoteDetails" 
         component={QuoteDetails}
-        options={{ 
-          title: 'Quote Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Quote Details' }}
       />
     </Stack.Navigator>
   );
@@ -216,6 +275,7 @@ const MechanicStack = () => {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen 
@@ -226,34 +286,22 @@ const MechanicStack = () => {
       <Stack.Screen 
         name="JobDetails" 
         component={JobDetails}
-        options={{ 
-          title: 'Job Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Job Details' }}
       />
       <Stack.Screen 
         name="CreateQuote" 
         component={CreateQuote}
-        options={{ 
-          title: 'Create Quote',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Create Quote' }}
       />
       <Stack.Screen 
         name="ServiceDetails" 
         component={ServiceDetails}
-        options={{ 
-          title: 'Service Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Service Details' }}
       />
       <Stack.Screen 
         name="QuoteDetails" 
         component={QuoteDetails}
-        options={{ 
-          title: 'Quote Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Quote Details' }}
       />
     </Stack.Navigator>
   );
@@ -274,6 +322,7 @@ const AdminStack = () => {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen 
@@ -284,34 +333,22 @@ const AdminStack = () => {
       <Stack.Screen 
         name="SystemOverview" 
         component={SystemOverview}
-        options={{ 
-          title: 'System Overview',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'System Overview' }}
       />
       <Stack.Screen 
         name="UserManagement" 
         component={UserManagement}
-        options={{ 
-          title: 'User Management',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'User Management' }}
       />
       <Stack.Screen 
         name="ServiceDetails" 
         component={ServiceDetails}
-        options={{ 
-          title: 'Service Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Service Details' }}
       />
       <Stack.Screen 
         name="QuoteDetails" 
         component={QuoteDetails}
-        options={{ 
-          title: 'Quote Details',
-          headerBackTitle: 'Back'
-        }}
+        options={{ title: 'Quote Details' }}
       />
     </Stack.Navigator>
   );
@@ -334,13 +371,18 @@ const AuthStack = () => {
   );
 };
 
-// Main Role-Based Navigator
+// Main Role-Based Navigator - FIXED VERSION
 const RoleBasedNavigator = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, isInitialized } = useAuth();
 
-  // Show loading state while checking authentication
+  // Show splash screen during initialization
+  if (!isInitialized) {
+    return <SplashScreen onAnimationEnd={() => {}} />;
+  }
+
+  // Show loading screen while authenticating (after initialization)
   if (isLoading) {
-    return null; // Or a loading screen component
+    return <LoadingScreen />;
   }
 
   // If not authenticated, show auth stack
@@ -348,7 +390,7 @@ const RoleBasedNavigator = () => {
     return <AuthStack />;
   }
 
-  // Route based on user role
+  // Route based on user role - with proper Text wrapping for any fallbacks
   switch (user.role) {
     case 'CLIENT':
       return <ClientStack />;
@@ -360,7 +402,7 @@ const RoleBasedNavigator = () => {
       return <AdminStack />;
     
     default:
-      // Fallback to auth if role is not recognized
+      console.warn(`Unknown user role: ${user.role}. Falling back to auth.`);
       return <AuthStack />;
   }
 };
