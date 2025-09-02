@@ -15,19 +15,12 @@ const AuthNavigator = () => {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: false,
         cardStyle: { backgroundColor: theme.colors.background },
         gestureEnabled: true,
         gestureDirection: 'horizontal',
         transitionSpec: {
-          open: {
-            animation: 'timing',
-            config: { duration: 300 },
-          },
-          close: {
-            animation: 'timing',
-            config: { duration: 300 },
-          },
+          open: { animation: 'timing', config: { duration: 300 } },
+          close: { animation: 'timing', config: { duration: 300 } },
         },
       }}
     >
@@ -35,14 +28,15 @@ const AuthNavigator = () => {
         name="Login" 
         component={LoginScreen}
         options={{
-          title: 'Sign In',
-          headerBackTitle: 'Back',
+          headerShown: false,
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen 
         name="Register" 
         component={RegisterScreen}
         options={{
+          headerShown: true,
           title: 'Create Account',
           headerBackTitle: 'Back',
         }}
@@ -50,5 +44,6 @@ const AuthNavigator = () => {
     </Stack.Navigator>
   );
 };
+
 
 export default AuthNavigator;
