@@ -41,7 +41,7 @@ const OfflineNotice = () => {
         }
       ]}
     >
-      <Text style={[styles.text, { color: theme.colors.white }]}>
+      <Text style={[styles.text, { color: '#fff' }]}>
         📵 No internet connection
       </Text>
     </Animated.View>
