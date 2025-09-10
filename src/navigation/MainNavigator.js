@@ -1,5 +1,5 @@
-// src/navigation/MainNavigator.js - CONSOLIDATED MAIN NAVIGATOR
-import React from 'react';
+// src/navigation/MainNavigator.js - FIXED to prevent infinite loop
+import React, { useMemo } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, ActivityIndicator } from 'react-native';
@@ -94,10 +94,10 @@ const getTabLabel = (routeName, userRole) => {
 };
 
 // =============================================================================
-// LOADING SCREEN
+// LOADING SCREEN - MEMOIZED to prevent re-renders
 // =============================================================================
 
-const LoadingScreen = () => {
+const LoadingScreen = React.memo(() => {
   const { theme } = useTheme();
   return (
     <View style={{
@@ -116,13 +116,13 @@ const LoadingScreen = () => {
       </Text>
     </View>
   );
-};
+});
 
 // =============================================================================
-// AUTH NAVIGATOR
+// AUTH NAVIGATOR - MEMOIZED
 // =============================================================================
 
-const AuthNavigator = () => {
+const AuthNavigator = React.memo(() => {
   const { theme } = useTheme();
   
   return (
@@ -136,160 +136,161 @@ const AuthNavigator = () => {
       <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
   );
-};
+});
 
 // =============================================================================
-// TAB NAVIGATORS (Role-Based)
+// TAB NAVIGATORS - MEMOIZED to prevent re-renders
 // =============================================================================
 
-const ClientTabs = () => {
+const ClientTabs = React.memo(() => {
   const { theme } = useTheme();
   
+  // ✅ FIX: Memoize screen options to prevent re-creation
+  const screenOptions = useMemo(() => ({ route }) => ({
+    headerShown: false,
+    tabBarIcon: ({ focused }) => (
+      <Text style={{ 
+        fontSize: 24,
+        color: focused ? theme.colors.primary : theme.colors.textSecondary 
+      }}>
+        {getTabIcon(route.name, ROLES.CLIENT)}
+      </Text>
+    ),
+    tabBarLabel: ({ focused, color }) => (
+      <Text style={{
+        color,
+        fontSize: 11,
+        fontWeight: focused ? '700' : '500',
+      }}>
+        {getTabLabel(route.name, ROLES.CLIENT)}
+      </Text>
+    ),
+    tabBarActiveTintColor: theme.colors.primary,
+    tabBarInactiveTintColor: theme.colors.textSecondary,
+    tabBarStyle: {
+      backgroundColor: theme.colors.surface,
+      borderTopColor: theme.colors.border,
+      height: 70,
+      paddingBottom: 10,
+      paddingTop: 5,
+    },
+  }), [theme]); // ✅ Only depend on theme
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ 
-            fontSize: 24,
-            color: focused ? theme.colors.primary : theme.colors.textSecondary 
-          }}>
-            {getTabIcon(route.name, ROLES.CLIENT)}
-          </Text>
-        ),
-        tabBarLabel: ({ focused, color }) => (
-          <Text style={{
-            color,
-            fontSize: 11,
-            fontWeight: focused ? '700' : '500',
-          }}>
-            {getTabLabel(route.name, ROLES.CLIENT)}
-          </Text>
-        ),
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 5,
-        },
-      })}
-    >
+    <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Dashboard" component={ClientDashboard} />
       <Tab.Screen name="Vehicles" component={Vehicles} />
       <Tab.Screen name="ServiceRequests" component={ServiceRequests} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
-};
+});
 
-const MechanicTabs = () => {
+const MechanicTabs = React.memo(() => {
   const { theme } = useTheme();
   
+  const screenOptions = useMemo(() => ({ route }) => ({
+    headerShown: false,
+    tabBarIcon: ({ focused }) => (
+      <Text style={{ 
+        fontSize: 24,
+        color: focused ? theme.colors.primary : theme.colors.textSecondary 
+      }}>
+        {getTabIcon(route.name, ROLES.MECHANIC)}
+      </Text>
+    ),
+    tabBarLabel: ({ focused, color }) => (
+      <Text style={{
+        color,
+        fontSize: 11,
+        fontWeight: focused ? '700' : '500',
+      }}>
+        {getTabLabel(route.name, ROLES.MECHANIC)}
+      </Text>
+    ),
+    tabBarActiveTintColor: theme.colors.primary,
+    tabBarInactiveTintColor: theme.colors.textSecondary,
+    tabBarStyle: {
+      backgroundColor: theme.colors.surface,
+      borderTopColor: theme.colors.border,
+      height: 70,
+      paddingBottom: 10,
+      paddingTop: 5,
+    },
+  }), [theme]);
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ 
-            fontSize: 24,
-            color: focused ? theme.colors.primary : theme.colors.textSecondary 
-          }}>
-            {getTabIcon(route.name, ROLES.MECHANIC)}
-          </Text>
-        ),
-        tabBarLabel: ({ focused, color }) => (
-          <Text style={{
-            color,
-            fontSize: 11,
-            fontWeight: focused ? '700' : '500',
-          }}>
-            {getTabLabel(route.name, ROLES.MECHANIC)}
-          </Text>
-        ),
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 5,
-        },
-      })}
-    >
+    <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Dashboard" component={MechanicDashboard} />
       <Tab.Screen name="Jobs" component={JobList} />
       <Tab.Screen name="Quotes" component={QuoteManagement} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
-};
+});
 
-const AdminTabs = () => {
+const AdminTabs = React.memo(() => {
   const { theme } = useTheme();
   
+  const screenOptions = useMemo(() => ({ route }) => ({
+    headerShown: false,
+    tabBarIcon: ({ focused }) => (
+      <Text style={{ 
+        fontSize: 24,
+        color: focused ? theme.colors.primary : theme.colors.textSecondary 
+      }}>
+        {getTabIcon(route.name, ROLES.ADMIN)}
+      </Text>
+    ),
+    tabBarLabel: ({ focused, color }) => (
+      <Text style={{
+        color,
+        fontSize: 11,
+        fontWeight: focused ? '700' : '500',
+      }}>
+        {getTabLabel(route.name, ROLES.ADMIN)}
+      </Text>
+    ),
+    tabBarActiveTintColor: theme.colors.primary,
+    tabBarInactiveTintColor: theme.colors.textSecondary,
+    tabBarStyle: {
+      backgroundColor: theme.colors.surface,
+      borderTopColor: theme.colors.border,
+      height: 70,
+      paddingBottom: 10,
+      paddingTop: 5,
+    },
+  }), [theme]);
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ 
-            fontSize: 24,
-            color: focused ? theme.colors.primary : theme.colors.textSecondary 
-          }}>
-            {getTabIcon(route.name, ROLES.ADMIN)}
-          </Text>
-        ),
-        tabBarLabel: ({ focused, color }) => (
-          <Text style={{
-            color,
-            fontSize: 11,
-            fontWeight: focused ? '700' : '500',
-          }}>
-            {getTabLabel(route.name, ROLES.ADMIN)}
-          </Text>
-        ),
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 5,
-        },
-      })}
-    >
+    <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Dashboard" component={AdminDashboard} />
       <Tab.Screen name="System" component={SystemOverview} />
       <Tab.Screen name="Users" component={UserManagement} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
-};
+});
 
 // =============================================================================
-// STACK NAVIGATORS (Role-Based)
+// STACK NAVIGATORS - MEMOIZED
 // =============================================================================
 
-const ClientStack = () => {
+const ClientStack = React.memo(() => {
   const { theme } = useTheme();
   
+  const screenOptions = useMemo(() => ({
+    headerStyle: {
+      backgroundColor: theme.colors.surface,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTintColor: theme.colors.text,
+    headerTitleStyle: { fontWeight: '600' },
+    headerBackTitleVisible: false,
+  }), [theme]);
+  
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
-          borderBottomColor: theme.colors.border,
-        },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: '600' },
-        headerBackTitleVisible: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen 
         name="ClientTabs" 
         component={ClientTabs} 
@@ -317,23 +318,23 @@ const ClientStack = () => {
       />
     </Stack.Navigator>
   );
-};
+});
 
-const MechanicStack = () => {
+const MechanicStack = React.memo(() => {
   const { theme } = useTheme();
   
+  const screenOptions = useMemo(() => ({
+    headerStyle: {
+      backgroundColor: theme.colors.surface,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTintColor: theme.colors.text,
+    headerTitleStyle: { fontWeight: '600' },
+    headerBackTitleVisible: false,
+  }), [theme]);
+  
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
-          borderBottomColor: theme.colors.border,
-        },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: '600' },
-        headerBackTitleVisible: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen 
         name="MechanicTabs" 
         component={MechanicTabs} 
@@ -361,23 +362,23 @@ const MechanicStack = () => {
       />
     </Stack.Navigator>
   );
-};
+});
 
-const AdminStack = () => {
+const AdminStack = React.memo(() => {
   const { theme } = useTheme();
   
+  const screenOptions = useMemo(() => ({
+    headerStyle: {
+      backgroundColor: theme.colors.surface,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTintColor: theme.colors.text,
+    headerTitleStyle: { fontWeight: '600' },
+    headerBackTitleVisible: false,
+  }), [theme]);
+  
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
-          borderBottomColor: theme.colors.border,
-        },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: '600' },
-        headerBackTitleVisible: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen 
         name="AdminTabs" 
         component={AdminTabs} 
@@ -395,55 +396,66 @@ const AdminStack = () => {
       />
     </Stack.Navigator>
   );
-};
+});
 
 // =============================================================================
-// MAIN NAVIGATOR
+// MAIN NAVIGATOR - OPTIMIZED to prevent infinite re-renders
 // =============================================================================
 
 const MainNavigator = () => {
   const { user, isAuthenticated, isLoading, isInitialized } = useAuth();
 
-  console.log('🔍 MainNavigator:', {
+  // ✅ FIX: Only log once per state change, not on every render
+  const debugInfo = useMemo(() => ({
     isAuthenticated,
     userRole: user?.role,
     isInitialized,
     isLoading
-  });
+  }), [isAuthenticated, user?.role, isInitialized, isLoading]);
 
-  // Show splash during initialization
-  if (!isInitialized) {
-    return <SplashScreen onAnimationEnd={() => {}} />;
-  }
+  // ✅ Only log when debug info actually changes
+  React.useEffect(() => {
+    console.log('🔍 MainNavigator state changed:', debugInfo);
+  }, [debugInfo]);
 
-  // Show loading after initialization
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+  // ✅ FIX: Memoize navigator selection to prevent re-creation
+  const navigatorComponent = useMemo(() => {
+    // Show splash during initialization
+    if (!isInitialized) {
+      return <SplashScreen onAnimationEnd={() => {}} />;
+    }
 
-  // Show auth if not authenticated
-  if (!isAuthenticated || !user) {
-    return <AuthNavigator />;
-  }
+    // Show loading after initialization
+    if (isLoading) {
+      return <LoadingScreen />;
+    }
 
-  // Route by role
-  switch (user.role) {
-    case ROLES.CLIENT:
-      console.log('📱 Rendering CLIENT stack');
-      return <ClientStack />;
-    
-    case ROLES.MECHANIC:
-      console.log('🔧 Rendering MECHANIC stack');
-      return <MechanicStack />;
-    
-    case ROLES.ADMIN:
-      console.log('👑 Rendering ADMIN stack');
-      return <AdminStack />;
-    
-    default:
-      console.warn(`⚠️ Unknown role: ${user.role}`);
+    // Show auth if not authenticated
+    if (!isAuthenticated || !user) {
       return <AuthNavigator />;
-  }
+    }
+
+    // Route by role
+    switch (user.role) {
+      case ROLES.CLIENT:
+        console.log('📱 Rendering CLIENT stack');
+        return <ClientStack />;
+      
+      case ROLES.MECHANIC:
+        console.log('🔧 Rendering MECHANIC stack');
+        return <MechanicStack />;
+      
+      case ROLES.ADMIN:
+        console.log('👑 Rendering ADMIN stack');
+        return <AdminStack />;
+      
+      default:
+        console.warn(`⚠️ Unknown role: ${user.role}`);
+        return <AuthNavigator />;
+    }
+  }, [isInitialized, isLoading, isAuthenticated, user?.role]); // ✅ Minimal dependencies
+
+  return navigatorComponent;
 };
 
 export default MainNavigator;
