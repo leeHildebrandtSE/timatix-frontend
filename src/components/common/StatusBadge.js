@@ -1,10 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { View, Text } from 'react-native';
+import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
 import { SERVICE_STATUS, SERVICE_PHASES } from '../../utils/constants';
 
-const StatusBadge = ({ status, variant = 'default', size = 'medium', style }) => {
+const StatusBadge = ({ 
+  status, 
+  variant = 'solid', 
+  size = 'medium', 
+  style 
+}) => {
   const { theme } = useTheme();
+  const globalStyles = useGlobalStyles();
 
   const getStatusConfig = (status) => {
     const statusMap = {
@@ -92,102 +98,80 @@ const StatusBadge = ({ status, variant = 'default', size = 'medium', style }) =>
 
   const config = getStatusConfig(status);
 
-  const getBadgeStyle = () => {
-    let badgeStyle = {
-      ...styles.badge,
-      backgroundColor: config.backgroundColor,
-    };
+  const getBadgeStyles = () => {
+    let badgeStyles = [globalStyles.statusBadge];
 
     // Size variations
     switch (size) {
       case 'small':
-        badgeStyle = { ...badgeStyle, ...styles.small };
+        badgeStyles.push(globalStyles.statusBadgeSmall);
         break;
       case 'large':
-        badgeStyle = { ...badgeStyle, ...styles.large };
+        badgeStyles.push(globalStyles.statusBadgeLarge);
         break;
       default:
-        badgeStyle = { ...badgeStyle, ...styles.medium };
+        // Medium is the base size
+        break;
     }
 
     // Variant styles
     switch (variant) {
       case 'solid':
-        badgeStyle = {
-          ...badgeStyle,
+        badgeStyles.push({
+          ...globalStyles.statusBadgeSolid,
           backgroundColor: config.color,
-        };
+        });
         break;
       case 'outline':
-        badgeStyle = {
-          ...badgeStyle,
-          backgroundColor: 'transparent',
-          borderWidth: 1,
+        badgeStyles.push({
+          ...globalStyles.statusBadgeOutline,
           borderColor: config.color,
-        };
+        });
+        break;
+      default:
+        // Default uses the config background color
+        badgeStyles.push({
+          backgroundColor: config.backgroundColor,
+        });
         break;
     }
 
-    return badgeStyle;
+    return badgeStyles;
   };
 
-  const getTextStyle = () => {
-    let textStyle = {
-      color: config.color,
-      fontWeight: '600',
-    };
+  const getTextStyles = () => {
+    let textStyles = [globalStyles.statusBadgeText];
 
     // Size text variations
     switch (size) {
       case 'small':
-        textStyle = { ...textStyle, fontSize: 10 };
+        textStyles.push(globalStyles.statusBadgeTextSmall);
         break;
       case 'large':
-        textStyle = { ...textStyle, fontSize: 14 };
+        textStyles.push(globalStyles.statusBadgeTextLarge);
         break;
       default:
-        textStyle = { ...textStyle, fontSize: 12 };
+        // Medium is the base size
+        break;
     }
 
-    // Variant text colors
-    if (variant === 'solid') {
-      textStyle.color = theme.colors.white;
-    }
+    // Text color based on variant
+    const textColor = variant === 'solid' ? 
+      theme.colors.white : 
+      config.color;
 
-    return textStyle;
+    textStyles.push({ color: textColor });
+
+    return textStyles;
   };
 
   return (
-    <View style={[getBadgeStyle(), style]}>
-      <Text style={getTextStyle()}>{config.label}</Text>
+    <View style={[...getBadgeStyles(), style]}>
+      <Text style={getTextStyles()}>
+        {config.label}
+      </Text>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  small: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  medium: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  large: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-});
 
 export default StatusBadge;

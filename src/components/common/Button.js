@@ -1,8 +1,6 @@
-// Button.js - FIXED VERSION
-// =============================================================================
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
 
 const Button = ({
   title,
@@ -16,121 +14,95 @@ const Button = ({
   ...props
 }) => {
   const { theme } = useTheme();
+  const globalStyles = useGlobalStyles();
 
-  const getButtonStyle = () => {
-    let baseStyle = {
-      ...styles.base,
-      backgroundColor: theme.colors.primary,
-    };
+  const getButtonStyles = () => {
+    let buttonStyles = [globalStyles.buttonBase];
 
-    // Size variations using theme.sizing
+    // Size variations
     switch (size) {
       case 'small':
-        baseStyle = { 
-          ...baseStyle, 
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.sm,
-          minHeight: 32,
-        };
+        buttonStyles.push(globalStyles.buttonSmall);
         break;
       case 'large':
-        baseStyle = { 
-          ...baseStyle, 
-          paddingHorizontal: theme.spacing.xxl,
-          paddingVertical: theme.spacing.lg,
-          minHeight: theme.sizing.buttonHeight,
-        };
+        buttonStyles.push(globalStyles.buttonLarge);
         break;
       default:
-        baseStyle = { 
-          ...baseStyle, 
-          paddingHorizontal: theme.spacing.xl,
-          paddingVertical: theme.spacing.md,
-          minHeight: theme.sizing.inputHeight,
-        };
+        // Medium is the base style
+        break;
     }
 
     // Variant styles
     switch (variant) {
       case 'secondary':
-        baseStyle = {
-          ...baseStyle,
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderColor: theme.colors.primary,
-        };
+        buttonStyles.push(globalStyles.buttonSecondary);
         break;
       case 'outline':
-        baseStyle = {
-          ...baseStyle,
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-        };
+        buttonStyles.push(globalStyles.buttonOutline);
         break;
       case 'ghost':
-        baseStyle = {
-          ...baseStyle,
-          backgroundColor: 'transparent',
-        };
+        buttonStyles.push(globalStyles.buttonGhost);
         break;
       case 'danger':
-        baseStyle = {
-          ...baseStyle,
-          backgroundColor: theme.colors.error,
-        };
+        buttonStyles.push(globalStyles.buttonDanger);
         break;
       case 'success':
-        baseStyle = {
-          ...baseStyle,
-          backgroundColor: theme.colors.success,
-        };
+        buttonStyles.push(globalStyles.buttonSuccess);
+        break;
+      default:
+        buttonStyles.push(globalStyles.buttonPrimary);
         break;
     }
 
     // Disabled state
     if (disabled || loading) {
-      baseStyle = {
-        ...baseStyle,
-        opacity: 0.5,
-      };
+      buttonStyles.push(globalStyles.buttonDisabled);
     }
 
-    return baseStyle;
+    return buttonStyles;
   };
 
-  const getTextStyle = () => {
-    let baseTextStyle = {
-      ...theme.typography.button,
-      color: '#fff', // ✅ FIXED: Use #fff instead of textOnPrimary
-    };
+  const getTextStyles = () => {
+    let textStyles = [globalStyles.buttonText];
 
-    // Size text variations - ✅ FIXED: Handle sizes properly
+    // Size text variations
     if (size === 'small') {
-      baseTextStyle = { 
-        ...baseTextStyle, 
-        fontSize: 14 // Smaller than default button text
-      };
+      textStyles.push(globalStyles.buttonTextSmall);
     }
 
     // Variant text colors
     switch (variant) {
       case 'secondary':
+        textStyles.push(globalStyles.buttonTextSecondary);
+        break;
       case 'outline':
+        textStyles.push(globalStyles.buttonTextOutline);
+        break;
       case 'ghost':
-        baseTextStyle = {
-          ...baseTextStyle,
-          color: theme.colors.primary,
-        };
+        textStyles.push(globalStyles.buttonTextGhost);
+        break;
+      default:
+        // Primary, danger, success use white text (default)
         break;
     }
 
-    return baseTextStyle;
+    return textStyles;
+  };
+
+  const getIndicatorColor = () => {
+    switch (variant) {
+      case 'secondary':
+      case 'outline':
+      case 'ghost':
+        return theme.colors.primary;
+      default:
+        return '#fff';
+    }
   };
 
   return (
     <TouchableOpacity
-      style={[getButtonStyle(), style]}
+      style={[...getButtonStyles(), style]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.7}
@@ -139,25 +111,13 @@ const Button = ({
       {loading ? (
         <ActivityIndicator 
           size="small" 
-          color={variant === 'secondary' || variant === 'outline' || variant === 'ghost' 
-            ? theme.colors.primary 
-            : '#fff' // ✅ FIXED: Use #fff instead of textOnPrimary
-          } 
+          color={getIndicatorColor()} 
         />
       ) : (
-        <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+        <Text style={[...getTextStyles(), textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-});
 
 export default Button;

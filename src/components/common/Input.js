@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { View, TextInput, Text, TouchableOpacity } from 'react-native';
+import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
 
 const Input = ({
   label,
@@ -22,32 +22,26 @@ const Input = ({
   ...props
 }) => {
   const { theme } = useTheme();
+  const globalStyles = useGlobalStyles();
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(!secureTextEntry);
 
   const getInputContainerStyle = () => {
-    let containerStyle = {
-      ...styles.inputContainer,
-      borderColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
-    };
+    let containerStyles = [globalStyles.inputFieldContainer];
 
     if (isFocused) {
-      containerStyle.borderColor = theme.colors.primary;
-      containerStyle.borderWidth = 2;
+      containerStyles.push(globalStyles.inputFieldFocused);
     }
 
     if (error) {
-      containerStyle.borderColor = theme.colors.error;
-      containerStyle.borderWidth = 2;
+      containerStyles.push(globalStyles.inputFieldError);
     }
 
     if (!editable) {
-      containerStyle.backgroundColor = theme.colors.borderLight;
-      containerStyle.opacity = 0.6;
+      containerStyles.push(globalStyles.inputFieldDisabled);
     }
 
-    return containerStyle;
+    return containerStyles;
   };
 
   const handleTogglePasswordVisibility = () => {
@@ -55,27 +49,26 @@ const Input = ({
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[globalStyles.inputContainer, style]}>
       {label && (
-        <Text style={[styles.label, theme.typography.label]}>
+        <Text style={[globalStyles.inputLabel, theme.typography.label]}>
           {label}
-          {required && <Text style={styles.required}> *</Text>}
+          {required && <Text style={globalStyles.inputRequired}> *</Text>}
         </Text>
       )}
       
       <View style={getInputContainerStyle()}>
         {leftIcon && (
-          <View style={styles.leftIconContainer}>
+          <View style={globalStyles.inputLeftIconContainer}>
             {leftIcon}
           </View>
         )}
         
         <TextInput
           style={[
-            styles.input,
+            globalStyles.inputField,
             theme.typography.input,
-            { color: theme.colors.text },
-            multiline && styles.multilineInput,
+            multiline && globalStyles.inputFieldMultiline,
             inputStyle,
           ]}
           value={value}
@@ -94,7 +87,7 @@ const Input = ({
         
         {secureTextEntry && (
           <TouchableOpacity
-            style={styles.rightIconContainer}
+            style={globalStyles.inputRightIconContainer}
             onPress={handleTogglePasswordVisibility}
           >
             <Text style={[theme.typography.caption, { color: theme.colors.primary }]}>
@@ -105,7 +98,7 @@ const Input = ({
         
         {rightIcon && !secureTextEntry && (
           <TouchableOpacity
-            style={styles.rightIconContainer}
+            style={globalStyles.inputRightIconContainer}
             onPress={onRightIconPress}
           >
             {rightIcon}
@@ -114,51 +107,12 @@ const Input = ({
       </View>
       
       {error && (
-        <Text style={[styles.errorText, theme.typography.error]}>
+        <Text style={[globalStyles.inputErrorText, theme.typography.error]}>
           {error}
         </Text>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 6,
-  },
-  required: {
-    color: '#FF3B30',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    minHeight: 44,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-  },
-  multilineInput: {
-    textAlignVertical: 'top',
-    paddingTop: 12,
-    paddingBottom: 12,
-  },
-  leftIconContainer: {
-    marginRight: 8,
-  },
-  rightIconContainer: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  errorText: {
-    marginTop: 4,
-  },
-});
 
 export default Input;

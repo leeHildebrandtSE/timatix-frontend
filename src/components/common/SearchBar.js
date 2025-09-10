@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { View, TextInput, TouchableOpacity, Text } from 'react-native';
+import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
 
 const SearchBar = ({
   placeholder = 'Search...',
@@ -11,6 +11,7 @@ const SearchBar = ({
   ...props
 }) => {
   const { theme } = useTheme();
+  const globalStyles = useGlobalStyles();
   const [isFocused, setIsFocused] = useState(false);
 
   const handleClear = () => {
@@ -18,25 +19,18 @@ const SearchBar = ({
     if (onClear) onClear();
   };
 
+  const containerStyles = [
+    globalStyles.searchBarContainer,
+    isFocused && globalStyles.searchBarFocused,
+    style
+  ];
+
   return (
-    <View style={[
-      styles.container,
-      {
-        backgroundColor: theme.colors.surface,
-        borderColor: isFocused ? theme.colors.primary : theme.colors.border,
-      },
-      style
-    ]}>
-      <Text style={[styles.searchIcon, { color: theme.colors.textSecondary }]}>
-        🔍
-      </Text>
+    <View style={containerStyles}>
+      <Text style={globalStyles.searchIcon}>🔍</Text>
       
       <TextInput
-        style={[
-          styles.input,
-          theme.typography.body2,
-          { color: theme.colors.text }
-        ]}
+        style={[globalStyles.searchInput, theme.typography.body2]}
         placeholder={placeholder}
         placeholderTextColor={theme.colors.textLight}
         value={value}
@@ -47,39 +41,12 @@ const SearchBar = ({
       />
       
       {value && (
-        <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-          <Text style={[styles.clearIcon, { color: theme.colors.textSecondary }]}>
-            ✕
-          </Text>
+        <TouchableOpacity onPress={handleClear} style={globalStyles.searchClearButton}>
+          <Text style={globalStyles.searchClearIcon}>✕</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 0,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  clearIcon: {
-    fontSize: 16,
-  },
-});
 
 export default SearchBar;
