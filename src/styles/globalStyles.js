@@ -727,6 +727,317 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   errorButton: {
     paddingHorizontal: spacing.xxl,
   },
+
+  // ENHANCED FILTER SYSTEM
+  // =====================
+  
+  // Filter containers
+  filtersContainer: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  filtersScrollContainer: {
+    paddingHorizontal: spacing.xl,
+  },
+  filterChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  filterChipsScrollContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.sm,
+  },
+
+  // Base filter chip styles
+  filterChipBase: {
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+  },
+
+  // Size variants
+  filterChipSmall: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 16,
+  },
+  filterChipMedium: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+  },
+  filterChipLarge: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: 24,
+  },
+
+  // Variant styles
+  filterChipDefault: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+  },
+  filterChipDefaultActive: {
+    backgroundColor: theme.colors.primary + '15',
+    borderColor: theme.colors.primary,
+  },
+  
+  filterChipOutline: {
+    backgroundColor: 'transparent',
+    borderColor: theme.colors.border,
+  },
+  filterChipOutlineActive: {
+    backgroundColor: 'transparent',
+    borderColor: theme.colors.primary,
+    borderWidth: 2,
+  },
+  
+  filterChipSolid: {
+    backgroundColor: theme.colors.textSecondary,
+    borderColor: theme.colors.textSecondary,
+  },
+  filterChipSolidActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+
+  // State styles
+  filterChipDisabled: {
+    opacity: 0.5,
+    backgroundColor: theme.colors.disabled,
+  },
+  filterChipPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+  },
+
+  // Text styles
+  filterChipTextBase: {
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  filterChipTextSmall: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  filterChipTextMedium: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  filterChipTextLarge: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  
+  filterChipTextDefault: {
+    color: theme.colors.text,
+  },
+  filterChipTextDefaultActive: {
+    color: theme.colors.primary,
+  },
+  
+  filterChipTextOutline: {
+    color: theme.colors.text,
+  },
+  filterChipTextOutlineActive: {
+    color: theme.colors.primary,
+  },
+  
+  filterChipTextSolid: {
+    color: '#fff',
+  },
+  filterChipTextSolidActive: {
+    color: '#fff',
+  },
+  
+  filterChipTextDisabled: {
+    color: theme.colors.textLight,
+  },
+
+  // Icon styles
+  filterChipIconContainer: {
+    marginRight: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipIcon: {
+    fontSize: 16,
+  },
+  filterChipIconSmall: {
+    fontSize: 14,
+  },
+  filterChipIconLarge: {
+    fontSize: 18,
+  },
+
+  // Count badge styles
+  filterChipCountBadge: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    marginLeft: spacing.xs,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipCountBadgeSmall: {
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    minWidth: 16,
+  },
+  filterChipCountBadgeLarge: {
+    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    minWidth: 22,
+  },
+  filterChipCountText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 13,
+  },
+  filterChipCountTextSmall: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  filterChipCountTextLarge: {
+    fontSize: 12,
+    lineHeight: 14,
+  },
+
+  // Remove button styles
+  filterChipRemoveButton: {
+    marginLeft: spacing.xs,
+    padding: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipRemoveIcon: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    lineHeight: 12,
+  },
+
+  // Content container for complex chips
+  filterChipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  // Special filter chips
+  filterChipPriorityUrgent: {
+    backgroundColor: theme.colors.error,
+    borderColor: theme.colors.error,
+  },
+  filterChipPriorityHigh: {
+    backgroundColor: '#FF8C00',
+    borderColor: '#FF8C00',
+  },
+  filterChipPriorityNormal: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterChipPriorityLow: {
+    backgroundColor: theme.colors.textSecondary,
+    borderColor: theme.colors.textSecondary,
+  },
+
+  filterChipStatusSuccess: {
+    backgroundColor: theme.colors.success + '15',
+    borderColor: theme.colors.success,
+  },
+  filterChipStatusWarning: {
+    backgroundColor: theme.colors.warning + '15',
+    borderColor: theme.colors.warning,
+  },
+  filterChipStatusError: {
+    backgroundColor: theme.colors.error + '15',
+    borderColor: theme.colors.error,
+  },
+  filterChipStatusInfo: {
+    backgroundColor: theme.colors.info + '15',
+    borderColor: theme.colors.info,
+  },
+
+  // Filter section styles
+  filterSection: {
+    marginBottom: spacing.lg,
+  },
+  filterSectionTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xl,
+  },
+  filterSectionContent: {
+    paddingHorizontal: spacing.xl,
+  },
+
+  // Filter header with clear all
+  filterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+  },
+  filterHeaderTitle: {
+    ...theme.typography.h6,
+    flex: 1,
+  },
+  filterClearAll: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  filterClearAllText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Filter results indicator
+  filterResults: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: theme.colors.info + '10',
+    borderRadius: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  filterResultsText: {
+    color: theme.colors.info,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Quick filter presets
+  quickFilters: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  quickFilterButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    marginRight: spacing.sm,
+  },
+  quickFilterButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 // =============================================================================
