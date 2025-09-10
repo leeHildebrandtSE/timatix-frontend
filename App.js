@@ -1,4 +1,4 @@
-// App.js - Enhanced Version (Optional Improvements)
+// App.js - Updated for MainNavigator
 import React, { useEffect } from 'react';
 import { StatusBar, Platform, LogBox, AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,11 +13,10 @@ import { AppProvider } from './src/context/AppContext';
 // Components
 import ErrorBoundary from './src/components/common/ErrorBoundary';
 import OfflineNotice from './src/components/common/OfflineNotice';
+import NotificationToast from './src/components/common/NotificationToast';
 
-// Navigation
-// import AppNavigator from './src/navigation/AppNavigator';
-// Alternatively, if you want to use the new role-based navigator:
-import RoleBasedNavigator from './src/navigation/RoleBasedNavigator';
+// Navigation - UPDATED TO USE MAINNAVIGATOR
+import MainNavigator from './src/navigation/MainNavigator';
 
 // Utils
 import { globalErrorHandler } from './src/utils/errorHandler';
@@ -33,6 +32,8 @@ if (__DEV__) {
     'Warning: componentWillMount',
     'Non-serializable values were found in the navigation state', // React Navigation deep linking
     'VirtualizedLists should never be nested', // FlatList warnings
+    'Animated.event now requires a second argument', // Animated warnings
+    'Task orphaned for request', // Network request warnings
   ]);
 }
 
@@ -50,6 +51,7 @@ const App = () => {
     console.log('📱 Platform:', Platform.OS);
     console.log('🔧 Development Mode:', __DEV__);
     console.log('👥 Available Roles:', Object.values(ROLES));
+    console.log('🧭 Using MainNavigator (Consolidated)');
 
     // Monitor app state changes (useful for auth token refresh)
     const handleAppStateChange = (nextAppState) => {
@@ -90,9 +92,8 @@ const App = () => {
                   }}
                   onStateChange={(state) => {
                     if (__DEV__) {
-                      console.log('📍 Navigation state changed');
-                      // Optional: Log current route for debugging
-                      const currentRoute = state?.routes?.[state.index]?.name;
+                      // Optional: Log navigation state changes for debugging
+                      const currentRoute = getCurrentRouteName(state);
                       if (currentRoute) {
                         console.log('📍 Current route:', currentRoute);
                       }
@@ -103,6 +104,51 @@ const App = () => {
                       console.log('🎯 Navigation container ready');
                     }
                   }}
+                  linking={{
+                    prefixes: ['timatix://', 'https://timatix.com'],
+                    config: {
+                      screens: {
+                        // Auth screens
+                        Login: 'login',
+                        Register: 'register',
+                        
+                        // Client screens
+                        ClientTabs: {
+                          screens: {
+                            Dashboard: 'home',
+                            Vehicles: 'vehicles',
+                            ServiceRequests: 'services',
+                            Profile: 'profile',
+                          },
+                        },
+                        
+                        // Detail screens
+                        VehicleDetails: 'vehicles/:vehicleId',
+                        ServiceDetails: 'services/:serviceId',
+                        QuoteDetails: 'quotes/:quoteId',
+                        
+                        // Mechanic screens
+                        MechanicTabs: {
+                          screens: {
+                            Dashboard: 'workshop',
+                            Jobs: 'jobs',
+                            Quotes: 'quotes',
+                            Profile: 'profile',
+                          },
+                        },
+                        
+                        // Admin screens
+                        AdminTabs: {
+                          screens: {
+                            Dashboard: 'admin',
+                            System: 'system',
+                            Users: 'users',
+                            Profile: 'profile',
+                          },
+                        },
+                      },
+                    },
+                  }}
                 >
                   <StatusBar 
                     barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} 
@@ -110,7 +156,8 @@ const App = () => {
                     translucent={false}
                   />
                   <OfflineNotice />
-                  <RoleBasedNavigator />
+                  <MainNavigator />
+                  <NotificationToast />
                 </NavigationContainer>
               </AppProvider>
             </AuthProvider>
@@ -119,6 +166,20 @@ const App = () => {
       </ErrorBoundary>
     </SafeAreaProvider>
   );
+};
+
+// Helper function to get current route name for debugging
+const getCurrentRouteName = (navigationState) => {
+  if (!navigationState) return null;
+  
+  const route = navigationState.routes[navigationState.index];
+  
+  // If this route has nested state, recursively get the current route
+  if (route.state) {
+    return getCurrentRouteName(route.state);
+  }
+  
+  return route.name;
 };
 
 export default App;
