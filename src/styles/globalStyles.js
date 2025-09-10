@@ -1,9 +1,12 @@
-// src/styles/globalStyles.js
-import { StyleSheet, Dimensions } from 'react-native';
+// src/styles/globalStyles.js - SINGLE ENTRY POINT FOR ALL STYLES
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
-// Base spacing system
+// =============================================================================
+// DESIGN TOKENS
+// =============================================================================
+
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -14,7 +17,6 @@ export const spacing = {
   xxxl: 32,
 };
 
-// Base sizing system
 export const sizing = {
   buttonHeight: 52,
   inputHeight: 44,
@@ -30,7 +32,6 @@ export const sizing = {
   }
 };
 
-// Shadow presets
 export const shadows = {
   small: {
     shadowColor: '#000',
@@ -55,7 +56,201 @@ export const shadows = {
   }
 };
 
-// Layout utilities
+// =============================================================================
+// COLOR SYSTEM
+// =============================================================================
+
+export const lightColors = {
+  // Brand Colors
+  primary: '#007AFF',
+  primaryDark: '#0056CC',
+  primaryLight: '#4A9EFF',
+  secondary: '#4CAF50',
+  secondaryDark: '#388E3C',
+  secondaryLight: '#81C784',
+  
+  // Status Colors
+  success: '#34C759',
+  warning: '#FF9500',
+  error: '#FF3B30',
+  info: '#5AC8FA',
+  
+  // Surface Colors
+  background: '#FFFFFF',
+  surface: '#F8F9FA',
+  card: '#FFFFFF',
+  
+  // Text Colors
+  text: '#1C1C1E',
+  textSecondary: '#6C7B7F',
+  textLight: '#8E8E93',
+  
+  // Border Colors
+  border: '#E5E5EA',
+  separator: '#C6C6C8',
+  placeholder: '#C7C7CC',
+  
+  // Utility Colors
+  disabled: '#F2F2F7',
+  overlay: 'rgba(0,0,0,0.4)',
+  backdrop: 'rgba(0,0,0,0.3)',
+  
+  // Status Badge Colors (consolidated from your colors.js)
+  pending: '#FF9500',
+  inProgress: '#007AFF',
+  completed: '#4CAF50',
+  cancelled: '#FF3B30',
+};
+
+export const darkColors = {
+  // Brand Colors
+  primary: '#0A84FF',
+  primaryDark: '#0056CC',
+  primaryLight: '#4A9EFF',
+  secondary: '#FF9F0A',
+  secondaryDark: '#FF8C00',
+  secondaryLight: '#FFB84A',
+  
+  // Status Colors
+  success: '#32D74B',
+  warning: '#FF9F0A',
+  error: '#FF453A',
+  info: '#64D2FF',
+  
+  // Surface Colors
+  background: '#000000',
+  surface: '#1C1C1E',
+  card: '#1C1C1E',
+  
+  // Text Colors
+  text: '#FFFFFF',
+  textSecondary: '#AEAEB2',
+  textLight: '#8E8E93',
+  
+  // Border Colors
+  border: '#38383A',
+  separator: '#48484A',
+  placeholder: '#48484A',
+  
+  // Utility Colors
+  disabled: '#1C1C1E',
+  overlay: 'rgba(0,0,0,0.6)',
+  backdrop: 'rgba(0,0,0,0.5)',
+  
+  // Status Badge Colors
+  pending: '#FF9F0A',
+  inProgress: '#0A84FF',
+  completed: '#32D74B',
+  cancelled: '#FF453A',
+};
+
+// =============================================================================
+// TYPOGRAPHY SYSTEM
+// =============================================================================
+
+const fontFamily = Platform.select({
+  ios: 'System',
+  android: 'Roboto',
+  default: 'System',
+});
+
+export const createTypography = (isDark) => ({
+  h1: {
+    fontSize: 32,
+    fontWeight: '700',
+    lineHeight: 40,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  h2: {
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 36,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  h3: {
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 32,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  h4: {
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 28,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  h5: {
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 24,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  h6: {
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  body1: {
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 22,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  body2: {
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 20,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+    fontFamily,
+    color: isDark ? darkColors.textSecondary : lightColors.textSecondary,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+    fontFamily,
+    color: isDark ? darkColors.textSecondary : lightColors.textSecondary,
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 22,
+    fontFamily,
+    color: isDark ? darkColors.text : lightColors.text,
+  },
+  button: {
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+    fontFamily,
+  },
+  error: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+    fontFamily,
+    color: isDark ? darkColors.error : lightColors.error,
+  },
+});
+
+// =============================================================================
+// LAYOUT UTILITIES
+// =============================================================================
+
 export const layout = {
   flex1: { flex: 1 },
   row: { flexDirection: 'row' },
@@ -69,7 +264,102 @@ export const layout = {
   alignEnd: { alignItems: 'flex-end' },
 };
 
-// Common component styles factory
+// =============================================================================
+// RESPONSIVE UTILITIES
+// =============================================================================
+
+export const responsive = {
+  isSmallScreen: width < 375,
+  isMediumScreen: width >= 375 && width < 414,
+  isLargeScreen: width >= 414,
+  screenWidth: width,
+  screenHeight: height,
+  
+  getSpacing: (size) => {
+    const multiplier = width < 375 ? 0.8 : width > 414 ? 1.2 : 1;
+    return spacing[size] * multiplier;
+  },
+  
+  getFontSize: (size) => {
+    const multiplier = width < 375 ? 0.9 : width > 414 ? 1.1 : 1;
+    return size * multiplier;
+  }
+};
+
+// =============================================================================
+// STYLE UTILITIES
+// =============================================================================
+
+export const mixins = {
+  // Center content
+  centerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  // Absolute positioning helpers
+  absoluteFill: StyleSheet.absoluteFillObject,
+  absoluteTop: (top = 0) => ({
+    position: 'absolute',
+    top,
+    left: 0,
+    right: 0,
+  }),
+  absoluteBottom: (bottom = 0) => ({
+    position: 'absolute',
+    bottom,
+    left: 0,
+    right: 0,
+  }),
+  
+  // Spacing utilities
+  margin: (value) => ({ margin: value }),
+  marginHorizontal: (value) => ({ marginHorizontal: value }),
+  marginVertical: (value) => ({ marginVertical: value }),
+  padding: (value) => ({ padding: value }),
+  paddingHorizontal: (value) => ({ paddingHorizontal: value }),
+  paddingVertical: (value) => ({ paddingVertical: value }),
+  
+  // Border utilities
+  border: (width = 1, color = '#E0E0E0') => ({
+    borderWidth: width,
+    borderColor: color,
+  }),
+  borderRadius: (radius) => ({ borderRadius: radius }),
+};
+
+// =============================================================================
+// STATUS & PRIORITY HELPERS
+// =============================================================================
+
+export const getStatusColor = (status, colors) => {
+  const statusColors = {
+    success: colors.success,
+    warning: colors.warning,
+    error: colors.error,
+    info: colors.info,
+    pending: colors.pending,
+    completed: colors.completed,
+    cancelled: colors.cancelled,
+    active: colors.primary,
+  };
+  return statusColors[status?.toLowerCase()] || colors.textSecondary;
+};
+
+export const getPriorityColor = (priority, colors) => {
+  const priorityColors = {
+    urgent: colors.error,
+    high: '#FF8C00',
+    normal: colors.primary,
+    low: colors.textSecondary,
+  };
+  return priorityColors[priority?.toLowerCase()] || colors.textSecondary;
+};
+
+// =============================================================================
+// GLOBAL STYLES FACTORY
+// =============================================================================
+
 export const createGlobalStyles = (theme) => StyleSheet.create({
   // Container styles
   container: {
@@ -220,17 +510,6 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     minWidth: '100%',
   },
 
-  // Form styles
-  formSection: {
-    marginBottom: spacing.xxl,
-  },
-  formGroup: {
-    marginBottom: spacing.xl,
-  },
-  inputContainer: {
-    marginBottom: spacing.xl,
-  },
-
   // Filter styles (common in lists)
   filters: {
     paddingHorizontal: spacing.xl,
@@ -379,6 +658,17 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     padding: spacing.xl,
   },
 
+  // Form styles
+  formSection: {
+    marginBottom: spacing.xxl,
+  },
+  formGroup: {
+    marginBottom: spacing.xl,
+  },
+  inputContainer: {
+    marginBottom: spacing.xl,
+  },
+
   // Button styles
   buttonRow: {
     flexDirection: 'row',
@@ -439,24 +729,21 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   },
 });
 
-// Responsive utilities
-export const responsive = {
-  isSmallScreen: width < 375,
-  isMediumScreen: width >= 375 && width < 414,
-  isLargeScreen: width >= 414,
-  screenWidth: width,
-  screenHeight: height,
-  
-  // Dynamic sizing based on screen
-  getSpacing: (size) => {
-    const multiplier = width < 375 ? 0.8 : width > 414 ? 1.2 : 1;
-    return spacing[size] * multiplier;
-  },
-  
-  getFontSize: (size) => {
-    const multiplier = width < 375 ? 0.9 : width > 414 ? 1.1 : 1;
-    return size * multiplier;
-  }
-};
+// =============================================================================
+// EXPORTS
+// =============================================================================
 
-export default { spacing, sizing, shadows, layout, createGlobalStyles, responsive };
+export default {
+  spacing,
+  sizing,
+  shadows,
+  layout,
+  lightColors,
+  darkColors,
+  createTypography,
+  createGlobalStyles,
+  responsive,
+  mixins,
+  getStatusColor,
+  getPriorityColor,
+};
