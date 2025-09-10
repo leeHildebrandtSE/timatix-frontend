@@ -1,38 +1,38 @@
-// src/navigation/RoleBasedNavigator.js - FIXED VERSION
+// src/navigation/MainNavigator.js - CONSOLIDATED MAIN NAVIGATOR
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, ActivityIndicator } from 'react-native'; // REMOVED Animated import
+import { Text, View, ActivityIndicator } from 'react-native';
+
+// Contexts & Constants
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { ROLES } from '../constants/roles'; // Added roles import
+import { ROLES } from '../constants/roles';
 
-// Import SplashScreen
+// Screens - Auth
 import SplashScreen from '../screens/auth/SplashScreen';
-
-// Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
-// Client Screens
+// Screens - Client
 import ClientDashboard from '../screens/client/ClientDashboard';
 import Vehicles from '../screens/client/Vehicles';
 import VehicleDetails from '../screens/client/VehicleDetails';
 import ServiceRequests from '../screens/client/ServiceRequestsScreen';
 import CreateServiceRequest from '../screens/client/CreateServiceRequest';
-import Profile from '../screens/shared/ProfileScreen';
 
-// Mechanic Screens
+// Screens - Mechanic
 import MechanicDashboard from '../screens/mechanic/MechanicDashboard';
 import JobList from '../screens/mechanic/JobList';
 import QuoteManagement from '../screens/mechanic/QuoteManagement';
 
-// Admin Screens
+// Screens - Admin
 import AdminDashboard from '../screens/admin/AdminDashboard';
 import SystemOverview from '../screens/admin/SystemOverview';
 import UserManagement from '../screens/admin/UserManagement';
 
-// Shared/Common Screens
+// Screens - Shared
+import Profile from '../screens/shared/ProfileScreen';
 import ServiceDetails from '../screens/shared/ServiceDetails';
 import QuoteDetails from '../screens/shared/QuoteDetails';
 import JobDetails from '../screens/shared/JobDetails';
@@ -41,37 +41,76 @@ import CreateQuote from '../screens/shared/CreateQuote';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab Icons (using emoji for simplicity)
-const getTabIcon = (routeName, focused) => {
-  const icons = {
-    Dashboard: '🏠',
-    Vehicles: '🚗',
-    ServiceRequests: '🔧',
-    Jobs: '🔧',
-    Quotes: '💰',
-    Users: '👥',
-    System: '⚙️',
-    Profile: '👤',
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+const getTabIcon = (routeName, userRole) => {
+  const roleIcons = {
+    [ROLES.CLIENT]: {
+      Dashboard: '🏠',
+      Vehicles: '🚗', 
+      ServiceRequests: '🔧',
+      Profile: '👤',
+    },
+    [ROLES.MECHANIC]: {
+      Dashboard: '🔧',
+      Jobs: '📋',
+      Quotes: '💰',
+      Profile: '👤',
+    },
+    [ROLES.ADMIN]: {
+      Dashboard: '📊',
+      System: '⚙️',
+      Users: '👥', 
+      Profile: '👤',
+    }
   };
-  return icons[routeName] || '•';
+  return roleIcons[userRole]?.[routeName] || '•';
 };
 
-// Loading Component with proper Text wrapper
+const getTabLabel = (routeName, userRole) => {
+  const roleLabels = {
+    [ROLES.CLIENT]: {
+      Dashboard: 'Home',
+      Vehicles: 'My Cars',
+      ServiceRequests: 'Services', 
+      Profile: 'Profile',
+    },
+    [ROLES.MECHANIC]: {
+      Dashboard: 'Workshop',
+      Jobs: 'Jobs',
+      Quotes: 'Quotes',
+      Profile: 'Profile',
+    },
+    [ROLES.ADMIN]: {
+      Dashboard: 'Overview',
+      System: 'System',
+      Users: 'Users',
+      Profile: 'Profile',
+    }
+  };
+  return roleLabels[userRole]?.[routeName] || routeName;
+};
+
+// =============================================================================
+// LOADING SCREEN
+// =============================================================================
+
 const LoadingScreen = () => {
   const { theme } = useTheme();
-  
   return (
-    <View style={{ 
-      flex: 1, 
-      justifyContent: 'center', 
+    <View style={{
+      flex: 1,
+      justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: theme?.colors?.background || '#FFFFFF'
+      backgroundColor: theme.colors.background,
     }}>
-      <ActivityIndicator size="large" color={theme?.colors?.primary || '#007AFF'} />
-      <Text style={{ 
+      <ActivityIndicator size="large" color={theme.colors.primary} />
+      <Text style={{
         marginTop: 16,
-        color: theme?.colors?.text || '#000000',
-        fontSize: 16
+        color: theme.colors.text,
+        fontSize: 16,
       }}>
         Loading...
       </Text>
@@ -79,7 +118,30 @@ const LoadingScreen = () => {
   );
 };
 
-// Client Tab Navigator
+// =============================================================================
+// AUTH NAVIGATOR
+// =============================================================================
+
+const AuthNavigator = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        cardStyle: { backgroundColor: theme.colors.background },
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// =============================================================================
+// TAB NAVIGATORS (Role-Based)
+// =============================================================================
+
 const ClientTabs = () => {
   const { theme } = useTheme();
   
@@ -88,8 +150,20 @@ const ClientTabs = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 24 }}>
-            {getTabIcon(route.name, focused)}
+          <Text style={{ 
+            fontSize: 24,
+            color: focused ? theme.colors.primary : theme.colors.textSecondary 
+          }}>
+            {getTabIcon(route.name, ROLES.CLIENT)}
+          </Text>
+        ),
+        tabBarLabel: ({ focused, color }) => (
+          <Text style={{
+            color,
+            fontSize: 11,
+            fontWeight: focused ? '700' : '500',
+          }}>
+            {getTabLabel(route.name, ROLES.CLIENT)}
           </Text>
         ),
         tabBarActiveTintColor: theme.colors.primary,
@@ -103,31 +177,14 @@ const ClientTabs = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={ClientDashboard}
-        options={{ title: 'Home' }}
-      />
-      <Tab.Screen 
-        name="Vehicles" 
-        component={Vehicles}
-        options={{ title: 'Vehicles' }}
-      />
-      <Tab.Screen 
-        name="ServiceRequests" 
-        component={ServiceRequests} 
-        options={{ title: 'Services' }} 
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={Profile}
-        options={{ title: 'Profile' }}
-      />
+      <Tab.Screen name="Dashboard" component={ClientDashboard} />
+      <Tab.Screen name="Vehicles" component={Vehicles} />
+      <Tab.Screen name="ServiceRequests" component={ServiceRequests} />
+      <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
 };
 
-// Mechanic Tab Navigator
 const MechanicTabs = () => {
   const { theme } = useTheme();
   
@@ -136,8 +193,20 @@ const MechanicTabs = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 24 }}>
-            {getTabIcon(route.name, focused)}
+          <Text style={{ 
+            fontSize: 24,
+            color: focused ? theme.colors.primary : theme.colors.textSecondary 
+          }}>
+            {getTabIcon(route.name, ROLES.MECHANIC)}
+          </Text>
+        ),
+        tabBarLabel: ({ focused, color }) => (
+          <Text style={{
+            color,
+            fontSize: 11,
+            fontWeight: focused ? '700' : '500',
+          }}>
+            {getTabLabel(route.name, ROLES.MECHANIC)}
           </Text>
         ),
         tabBarActiveTintColor: theme.colors.primary,
@@ -151,31 +220,14 @@ const MechanicTabs = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={MechanicDashboard}
-        options={{ title: 'Workshop' }}
-      />
-      <Tab.Screen 
-        name="Jobs" 
-        component={JobList}
-        options={{ title: 'Jobs' }}
-      />
-      <Tab.Screen 
-        name="Quotes" 
-        component={QuoteManagement}
-        options={{ title: 'Quotes' }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={Profile}
-        options={{ title: 'Profile' }}
-      />
+      <Tab.Screen name="Dashboard" component={MechanicDashboard} />
+      <Tab.Screen name="Jobs" component={JobList} />
+      <Tab.Screen name="Quotes" component={QuoteManagement} />
+      <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
 };
 
-// Admin Tab Navigator
 const AdminTabs = () => {
   const { theme } = useTheme();
   
@@ -184,8 +236,20 @@ const AdminTabs = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 24 }}>
-            {getTabIcon(route.name, focused)}
+          <Text style={{ 
+            fontSize: 24,
+            color: focused ? theme.colors.primary : theme.colors.textSecondary 
+          }}>
+            {getTabIcon(route.name, ROLES.ADMIN)}
+          </Text>
+        ),
+        tabBarLabel: ({ focused, color }) => (
+          <Text style={{
+            color,
+            fontSize: 11,
+            fontWeight: focused ? '700' : '500',
+          }}>
+            {getTabLabel(route.name, ROLES.ADMIN)}
           </Text>
         ),
         tabBarActiveTintColor: theme.colors.primary,
@@ -199,31 +263,18 @@ const AdminTabs = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={AdminDashboard}
-        options={{ title: 'Admin' }}
-      />
-      <Tab.Screen 
-        name="System" 
-        component={SystemOverview}
-        options={{ title: 'System' }}
-      />
-      <Tab.Screen 
-        name="Users" 
-        component={UserManagement}
-        options={{ title: 'Users' }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={Profile}
-        options={{ title: 'Profile' }}
-      />
+      <Tab.Screen name="Dashboard" component={AdminDashboard} />
+      <Tab.Screen name="System" component={SystemOverview} />
+      <Tab.Screen name="Users" component={UserManagement} />
+      <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
 };
 
-// Client Stack Navigator
+// =============================================================================
+// STACK NAVIGATORS (Role-Based)
+// =============================================================================
+
 const ClientStack = () => {
   const { theme } = useTheme();
   
@@ -235,9 +286,7 @@ const ClientStack = () => {
           borderBottomColor: theme.colors.border,
         },
         headerTintColor: theme.colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
+        headerTitleStyle: { fontWeight: '600' },
         headerBackTitleVisible: false,
       }}
     >
@@ -270,7 +319,6 @@ const ClientStack = () => {
   );
 };
 
-// Mechanic Stack Navigator
 const MechanicStack = () => {
   const { theme } = useTheme();
   
@@ -282,9 +330,7 @@ const MechanicStack = () => {
           borderBottomColor: theme.colors.border,
         },
         headerTintColor: theme.colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
+        headerTitleStyle: { fontWeight: '600' },
         headerBackTitleVisible: false,
       }}
     >
@@ -317,7 +363,6 @@ const MechanicStack = () => {
   );
 };
 
-// Admin Stack Navigator
 const AdminStack = () => {
   const { theme } = useTheme();
   
@@ -329,9 +374,7 @@ const AdminStack = () => {
           borderBottomColor: theme.colors.border,
         },
         headerTintColor: theme.colors.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
+        headerTitleStyle: { fontWeight: '600' },
         headerBackTitleVisible: false,
       }}
     >
@@ -339,16 +382,6 @@ const AdminStack = () => {
         name="AdminTabs" 
         component={AdminTabs} 
         options={{ headerShown: false }}
-      />
-      <Stack.Screen 
-        name="SystemOverview" 
-        component={SystemOverview}
-        options={{ title: 'System Overview' }}
-      />
-      <Stack.Screen 
-        name="UserManagement" 
-        component={UserManagement}
-        options={{ title: 'User Management' }}
       />
       <Stack.Screen 
         name="ServiceDetails" 
@@ -364,69 +397,53 @@ const AdminStack = () => {
   );
 };
 
-// Auth Stack Navigator
-const AuthStack = () => {
-  const { theme } = useTheme();
-  
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        cardStyle: { backgroundColor: theme.colors.background },
-      }}
-    >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-    </Stack.Navigator>
-  );
-};
+// =============================================================================
+// MAIN NAVIGATOR
+// =============================================================================
 
-// Main Role-Based Navigator - FIXED VERSION
-const RoleBasedNavigator = () => {
+const MainNavigator = () => {
   const { user, isAuthenticated, isLoading, isInitialized } = useAuth();
 
-  // Debug logging
-  console.log('🔍 RoleBasedNavigator Debug:', {
+  console.log('🔍 MainNavigator:', {
     isAuthenticated,
     userRole: user?.role,
-    userName: user?.name,
     isInitialized,
     isLoading
   });
 
-  // Show splash screen during initialization
+  // Show splash during initialization
   if (!isInitialized) {
     return <SplashScreen onAnimationEnd={() => {}} />;
   }
 
-  // Show loading screen while authenticating (after initialization)
+  // Show loading after initialization
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // If not authenticated, show auth stack
+  // Show auth if not authenticated
   if (!isAuthenticated || !user) {
-    return <AuthStack />;
+    return <AuthNavigator />;
   }
 
-  // Route based on user role using centralized constants
+  // Route by role
   switch (user.role) {
     case ROLES.CLIENT:
-      console.log('📱 Rendering CLIENT tabs');
+      console.log('📱 Rendering CLIENT stack');
       return <ClientStack />;
     
     case ROLES.MECHANIC:
-      console.log('🔧 Rendering MECHANIC tabs');
+      console.log('🔧 Rendering MECHANIC stack');
       return <MechanicStack />;
     
     case ROLES.ADMIN:
-      console.log('👑 Rendering ADMIN tabs');
+      console.log('👑 Rendering ADMIN stack');
       return <AdminStack />;
     
     default:
-      console.warn(`⚠️ Unknown user role: ${user.role}. Available roles:`, Object.values(ROLES));
-      return <AuthStack />;
+      console.warn(`⚠️ Unknown role: ${user.role}`);
+      return <AuthNavigator />;
   }
 };
 
-export default RoleBasedNavigator;
+export default MainNavigator;
