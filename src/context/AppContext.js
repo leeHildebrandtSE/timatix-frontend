@@ -1,5 +1,5 @@
-// src/context/AppContext.js - CLEAN VERSION - NO INFINITE LOOPS
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+// src/context/AppContext.js - COMPLETELY FIXED VERSION - NO INFINITE LOOPS
+import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { SERVICE_STATUS } from '../utils/constants';
 
@@ -15,7 +15,7 @@ const initialState = {
   initialized: false,
 };
 
-// Mock data generators
+// Mock data generators (same as before)
 const generateMockVehicles = (userId) => [
   {
     id: '1',
@@ -374,23 +374,32 @@ const appReducer = (state, action) => {
 // Context
 const AppContext = createContext();
 
-// Provider - FIXED VERSION
+// Provider - COMPLETELY FIXED VERSION
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { isAuthenticated, user } = useAuth();
+  
+  // 🔑 KEY FIX: Use refs to track previous values and prevent infinite loops
+  const prevIsAuthenticated = useRef(isAuthenticated);
+  const hasInitialized = useRef(false);
 
-  // FIXED: Single initialization effect - no infinite loop
+  // 🔑 KEY FIX: Only initialize when user logs in, prevent re-initialization
   useEffect(() => {
     console.log('🔍 AppContext useEffect triggered:', {
       isAuthenticated,
       hasUser: !!user,
       initialized: state.initialized,
-      userRole: user?.role
+      userRole: user?.role,
+      hasInitialized: hasInitialized.current
     });
 
-    // Initialize only once when user logs in
-    if (isAuthenticated && user?.id && !state.initialized) {
+    // Initialize only once when user logs in AND we haven't initialized before
+    if (isAuthenticated && 
+        user?.id && 
+        !hasInitialized.current) {
+      
       console.log('🚀 Initializing mock data directly...');
+      hasInitialized.current = true;
       
       const mockVehicles = user.role === 'CLIENT' ? generateMockVehicles(user.id) : [];
       const mockServiceRequests = generateMockServiceRequests(user.id, user.role);
@@ -409,15 +418,20 @@ export const AppProvider = ({ children }) => {
 
       console.log('✅ Mock data initialized successfully');
     }
-  }, [isAuthenticated, user?.id, user?.role, state.initialized]);
+  }, [isAuthenticated, user?.id, user?.role]); // 🔑 KEY FIX: Remove state.initialized from dependencies
 
-  // FIXED: Reset only when going from authenticated to not authenticated
+  // 🔑 KEY FIX: Reset only when going from authenticated to not authenticated
   useEffect(() => {
-    if (!isAuthenticated && state.initialized) {
+    // Only reset if we were previously authenticated and now we're not
+    if (prevIsAuthenticated.current && !isAuthenticated) {
       console.log('👋 User logged out, resetting app state');
       dispatch({ type: APP_ACTIONS.RESET_STATE });
+      hasInitialized.current = false; // Allow re-initialization on next login
     }
-  }, [isAuthenticated]); // Remove state.initialized to prevent loop
+    
+    // Update the ref for next time
+    prevIsAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated]); // Only depend on isAuthenticated
 
   // Action creators
   const setLoading = (loading) => {
@@ -516,10 +530,6 @@ export const AppProvider = ({ children }) => {
     addVehicle,
     updateVehicle,
     deleteVehicle,
-    
-    // Service request actions
-    setServiceRequests: (requests) => dispatch({ type: APP_ACTIONS.SET_SERVICE_REQUESTS, payload: requests }),
-    addServiceRequest,
     updateServiceRequest,
     deleteServiceRequest,
     

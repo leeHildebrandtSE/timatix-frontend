@@ -2,9 +2,10 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, ActivityIndicator } from 'react-native'; // Added missing imports
+import { Text, View, ActivityIndicator } from 'react-native'; // REMOVED Animated import
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { ROLES } from '../constants/roles'; // Added roles import
 
 // Import SplashScreen
 import SplashScreen from '../screens/auth/SplashScreen';
@@ -14,12 +15,12 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
 // Client Screens
-import ClientDashboard from '../screens/client/Dashboard';
+import ClientDashboard from '../screens/client/ClientDashboard';
 import Vehicles from '../screens/client/Vehicles';
 import VehicleDetails from '../screens/client/VehicleDetails';
 import ServiceRequests from '../screens/client/ServiceRequestsScreen';
 import CreateServiceRequest from '../screens/client/CreateServiceRequest';
-import Profile from '../screens/client/Profile';
+import Profile from '../screens/shared/ProfileScreen';
 
 // Mechanic Screens
 import MechanicDashboard from '../screens/mechanic/MechanicDashboard';
@@ -96,6 +97,9 @@ const ClientTabs = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 5,
         },
       })}
     >
@@ -141,6 +145,9 @@ const MechanicTabs = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 5,
         },
       })}
     >
@@ -186,6 +193,9 @@ const AdminTabs = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 5,
         },
       })}
     >
@@ -375,6 +385,15 @@ const AuthStack = () => {
 const RoleBasedNavigator = () => {
   const { user, isAuthenticated, isLoading, isInitialized } = useAuth();
 
+  // Debug logging
+  console.log('🔍 RoleBasedNavigator Debug:', {
+    isAuthenticated,
+    userRole: user?.role,
+    userName: user?.name,
+    isInitialized,
+    isLoading
+  });
+
   // Show splash screen during initialization
   if (!isInitialized) {
     return <SplashScreen onAnimationEnd={() => {}} />;
@@ -390,19 +409,22 @@ const RoleBasedNavigator = () => {
     return <AuthStack />;
   }
 
-  // Route based on user role - with proper Text wrapping for any fallbacks
+  // Route based on user role using centralized constants
   switch (user.role) {
-    case 'CLIENT':
+    case ROLES.CLIENT:
+      console.log('📱 Rendering CLIENT tabs');
       return <ClientStack />;
     
-    case 'MECHANIC':
+    case ROLES.MECHANIC:
+      console.log('🔧 Rendering MECHANIC tabs');
       return <MechanicStack />;
     
-    case 'ADMIN':
+    case ROLES.ADMIN:
+      console.log('👑 Rendering ADMIN tabs');
       return <AdminStack />;
     
     default:
-      console.warn(`Unknown user role: ${user.role}. Falling back to auth.`);
+      console.warn(`⚠️ Unknown user role: ${user.role}. Available roles:`, Object.values(ROLES));
       return <AuthStack />;
   }
 };

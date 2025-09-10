@@ -57,7 +57,7 @@ const LoginScreen = ({ navigation }) => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 50,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {

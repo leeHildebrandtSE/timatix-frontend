@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Animated,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -18,8 +18,11 @@ import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { SERVICE_STATUS } from '../../utils/constants';
 import { serviceRequestsService } from '../../services/serviceRequestsService';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MechanicDashboard = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { 
     serviceRequests, 
@@ -39,9 +42,48 @@ const MechanicDashboard = ({ navigation }) => {
     monthlyEarnings: 0,
   });
 
+  const [fadeAnim] = useState(new Animated.Value(0));
+
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const getTimeOfDayGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
+
+  const renderWelcomeHeader = () => (
+      <View 
+        style={[
+          styles.welcomeHeader, 
+          { backgroundColor: theme.colors.primary },
+          { paddingTop: insets.top + 20 }, // ensures space for status bar
+        ]}
+      >
+        <View style={styles.welcomeContent}>
+          <View style={styles.greetingContainer}>
+            <Text style={[styles.greeting, { color: '#fff' }]}>
+              Good {getTimeOfDayGreeting()}, {user?.firstName}! 👋
+            </Text>
+            <Text style={[styles.subGreeting, { color: 'rgba(255,255,255,0.8)' }]}>
+              Manage your assigned jobs and quotes
+            </Text>
+          </View>
+          
+          <View style={styles.weatherWidget}>
+            <Text style={[styles.weatherText, { color: 'rgba(255,255,255,0.9)' }]}>
+              ☀️ 24°C
+            </Text>
+            <Text style={[styles.weatherLocation, { color: 'rgba(255,255,255,0.7)' }]}>
+              Cape Town
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
 
   useEffect(() => {
     calculateMechanicStats();
@@ -263,7 +305,7 @@ const MechanicDashboard = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -272,6 +314,10 @@ const MechanicDashboard = ({ navigation }) => {
         }
         showsVerticalScrollIndicator={false}
       >
+
+        {/* Welcome Header */}
+        {renderWelcomeHeader()}
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.greeting, theme.typography.h3]}>
@@ -487,18 +533,47 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
+    flexGrow: 1,  // ensures it fills screen height
   },
+
+  // Enhanced Welcome Header
+  welcomeHeader: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  welcomeContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  
+  greetingContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subGreeting: {
+    fontSize: 16,
+    lineHeight: 22,
+    opacity: 0.7,
+  },
+
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
   },
-  greeting: {
-    marginBottom: 4,
-  },
-  subGreeting: {
-    opacity: 0.7,
-  },
+
   quickActions: {
     flexDirection: 'row',
     paddingHorizontal: 20,

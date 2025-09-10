@@ -3,11 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -16,8 +17,13 @@ import MetricCard from '../../components/cards/MetricCard';
 import ServiceCard from '../../components/cards/ServiceCard';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
 
 const AdminDashboard = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { 
     serviceRequests, 
@@ -29,6 +35,7 @@ const AdminDashboard = ({ navigation }) => {
   const { theme } = useTheme();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
   const [dashboardData, setDashboardData] = useState({
     totalUsers: 0,
     totalMechanics: 0,
@@ -36,10 +43,18 @@ const AdminDashboard = ({ navigation }) => {
     totalRevenue: 0,
     pendingQuotes: 0,
     completedServices: 0,
+    todayServices: 0,
+    weeklyGrowth: 0,
   });
 
   useEffect(() => {
     loadDashboardData();
+    
+    // Fade in animation
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 50, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 50, useNativeDriver: true, delay: 20 }),
+    ]).start();
   }, []);
 
   useEffect(() => {
@@ -49,7 +64,6 @@ const AdminDashboard = ({ navigation }) => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      // Simulate API calls - replace with actual API calls
       await Promise.all([
         loadUsers(),
         loadServiceRequests(),
@@ -65,20 +79,14 @@ const AdminDashboard = ({ navigation }) => {
 
   const loadUsers = async () => {
     // Mock data - replace with actual API call
-    // const users = await userService.getAllUsers();
-    // setUsers(users);
   };
 
   const loadServiceRequests = async () => {
     // Mock data - replace with actual API call
-    // const requests = await serviceRequestsService.getAllRequests();
-    // setServiceRequests(requests);
   };
 
   const loadSystemMetrics = async () => {
     // Mock data - replace with actual API call
-    // const metrics = await analyticsService.getSystemMetrics();
-    // setDashboardData(metrics);
   };
 
   const calculateMetrics = () => {
@@ -94,9 +102,18 @@ const AdminDashboard = ({ navigation }) => {
       req.status === 'COMPLETED'
     ).length;
     
+    // Calculate today's services
+    const today = new Date().toDateString();
+    const todayServices = serviceRequests.filter(req => 
+      new Date(req.preferredDate).toDateString() === today
+    ).length;
+    
     const totalRevenue = serviceRequests
       .filter(req => req.status === 'COMPLETED' && req.quote?.totalAmount)
       .reduce((sum, req) => sum + req.quote.totalAmount, 0);
+
+    // Calculate weekly growth (mock calculation)
+    const weeklyGrowth = Math.round(Math.random() * 20 + 5); // 5-25% growth
 
     setDashboardData({
       totalUsers,
@@ -105,6 +122,8 @@ const AdminDashboard = ({ navigation }) => {
       totalRevenue,
       pendingQuotes,
       completedServices,
+      todayServices,
+      weeklyGrowth,
     });
   };
 
@@ -126,6 +145,14 @@ const AdminDashboard = ({ navigation }) => {
     navigation.navigate('ServiceRequests');
   };
 
+  const handleViewReports = () => {
+    navigation.navigate('Reports');
+  };
+
+  const handleViewSettings = () => {
+    navigation.navigate('AdminSettings');
+  };
+
   const handleServicePress = (service) => {
     navigation.navigate('ServiceDetails', { serviceId: service.id });
   };
@@ -140,8 +167,6 @@ const AdminDashboard = ({ navigation }) => {
           text: 'Approve', 
           onPress: async () => {
             try {
-              // API call to approve service
-              // await serviceRequestsService.approveService(service.id);
               addNotification({
                 title: 'Service Approved',
                 message: `Service request for ${service.serviceType} has been approved.`,
@@ -162,6 +187,219 @@ const AdminDashboard = ({ navigation }) => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
+  // Get urgent services
+  const urgentServices = serviceRequests
+    .filter(req => req.priority === 'URGENT' && req.status !== 'COMPLETED')
+    .slice(0, 3);
+
+
+  const getTimeOfDayGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
+  
+  const renderWelcomeHeader = () => (
+    <Animated.View 
+      style={[
+        styles.welcomeHeader, 
+        { backgroundColor: theme.colors.primary },
+        { paddingTop: insets.top + 20 }, // ensures space for status bar
+        { opacity: fadeAnim }
+      ]}
+    >
+      <View style={styles.welcomeContent}>
+        <View style={styles.greetingContainer}>
+          <Text style={[styles.greeting, { color: '#fff' }]}>
+            Welcome back, {user?.firstName}! 👋
+          </Text>
+          <Text style={[styles.subGreeting, { color: 'rgba(255,255,255,0.8)' }]}>
+            Here's what's happening with your platform
+          </Text>
+        </View>
+        
+        <View style={styles.todayWidget}>
+          <Text style={[styles.todayNumber, { color: '#fff' }]}>
+            {dashboardData.todayServices}
+          </Text>
+          <Text style={[styles.todayLabel, { color: 'rgba(255,255,255,0.8)' }]}>
+            Today's Services
+          </Text>
+        </View>
+      </View>
+    </Animated.View>
+  );
+
+  const renderQuickActions = () => (
+    <Animated.View 
+      style={[styles.quickActionsContainer, { opacity: fadeAnim }]}
+    >
+      <Text style={[styles.sectionTitle, theme.typography.h5]}>
+        Quick Actions
+      </Text>
+      
+      <View style={styles.quickActions}>
+        <TouchableOpacity
+          style={[styles.quickActionCard, { backgroundColor: theme.colors.primary }]}
+          onPress={handleViewSystemOverview}
+        >
+          <View style={styles.quickActionIcon}>
+            <Text style={styles.quickActionIconText}>📊</Text>
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#fff' }]}>
+            System Overview
+          </Text>
+          <Text style={[styles.quickActionSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
+            View detailed metrics
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.quickActionCard, { backgroundColor: theme.colors.secondary }]}
+          onPress={handleViewUserManagement}
+        >
+          <View style={styles.quickActionIcon}>
+            <Text style={styles.quickActionIconText}>👥</Text>
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#fff' }]}>
+            Manage Users
+          </Text>
+          <Text style={[styles.quickActionSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
+            Add, edit, or remove users
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.quickActionCard, { backgroundColor: theme.colors.success }]}
+          onPress={handleViewReports}
+        >
+          <View style={styles.quickActionIcon}>
+            <Text style={styles.quickActionIconText}>📈</Text>
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#fff' }]}>
+            Reports
+          </Text>
+          <Text style={[styles.quickActionSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
+            Generate insights
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.quickActionCard, { backgroundColor: theme.colors.warning }]}
+          onPress={handleViewSettings}
+        >
+          <View style={styles.quickActionIcon}>
+            <Text style={styles.quickActionIconText}>⚙️</Text>
+          </View>
+          <Text style={[styles.quickActionTitle, { color: '#fff' }]}>
+            Settings
+          </Text>
+          <Text style={[styles.quickActionSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
+            Configure platform
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+
+  const renderKeyMetrics = () => (
+    <Animated.View 
+      style={[styles.metricsContainer, { opacity: fadeAnim }]}
+    >
+      <Text style={[styles.sectionTitle, theme.typography.h5]}>
+        Key Metrics
+      </Text>
+      
+      <View style={styles.metricsGrid}>
+        <MetricCard
+          title="Total Users"
+          value={dashboardData.totalUsers.toString()}
+          icon="👥"
+          color={theme.colors.primary}
+          trend={`+${dashboardData.weeklyGrowth}% this week`}
+          size="medium"
+          style={styles.metricCard}
+          onPress={handleViewUserManagement}
+        />
+        
+        <MetricCard
+          title="Active Mechanics"
+          value={dashboardData.totalMechanics.toString()}
+          icon="🔧"
+          color={theme.colors.secondary}
+          trend="All available"
+          size="medium"
+          style={styles.metricCard}
+        />
+      </View>
+
+      <View style={styles.metricsGrid}>
+        <MetricCard
+          title="Active Services"
+          value={dashboardData.activeServices.toString()}
+          icon="⚙️"
+          color={theme.colors.warning}
+          trend={dashboardData.activeServices > 0 ? "In progress" : "All caught up"}
+          size="medium"
+          style={styles.metricCard}
+        />
+        
+        <MetricCard
+          title="Total Revenue"
+          value={`R ${dashboardData.totalRevenue.toFixed(0)}`}
+          icon="💰"
+          color={theme.colors.success}
+          trend={`+${Math.round(dashboardData.weeklyGrowth * 0.8)}% this month`}
+          size="medium"
+          style={styles.metricCard}
+        />
+      </View>
+    </Animated.View>
+  );
+
+  const renderServiceOverview = () => (
+    <Animated.View 
+      style={[styles.metricsContainer, { opacity: fadeAnim }]}
+    >
+      <Text style={[styles.sectionTitle, theme.typography.h5]}>
+        Service Overview
+      </Text>
+      
+      <View style={styles.metricsGrid}>
+        <MetricCard
+          title="Pending Quotes"
+          value={dashboardData.pendingQuotes.toString()}
+          icon="📋"
+          color={theme.colors.warning}
+          trend={dashboardData.pendingQuotes > 0 ? "Needs attention" : "All processed"}
+          size="small"
+          style={styles.metricCard}
+        />
+        
+        <MetricCard
+          title="Completed Today"
+          value={dashboardData.todayServices.toString()}
+          icon="✅"
+          color={theme.colors.success}
+          trend="Today's progress"
+          size="small"
+          style={styles.metricCard}
+        />
+        
+        <MetricCard
+          title="Total Completed"
+          value={dashboardData.completedServices.toString()}
+          icon="🎯"
+          color={theme.colors.info}
+          trend="All time"
+          size="small"
+          style={styles.metricCard}
+        />
+      </View>
+    </Animated.View>
+  );
+
   if (isLoading && !refreshing) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -171,7 +409,7 @@ const AdminDashboard = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -180,114 +418,54 @@ const AdminDashboard = ({ navigation }) => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.greeting, theme.typography.h3]}>
-            Admin Dashboard
-          </Text>
-          <Text style={[styles.subGreeting, theme.typography.body2]}>
-            System overview and management
-          </Text>
-        </View>
+        {/* Enhanced Welcome Header */}
+        {renderWelcomeHeader()}
 
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <Button
-            title="System Overview"
-            onPress={handleViewSystemOverview}
-            style={styles.primaryAction}
-          />
-          <Button
-            title="Manage Users"
-            variant="outline"
-            onPress={handleViewUserManagement}
-            style={styles.secondaryAction}
-          />
-        </View>
+        {/* Improved Quick Actions */}
+        {renderQuickActions()}
 
-        {/* Key Metrics */}
-        <View style={styles.metricsContainer}>
-          <Text style={[styles.sectionTitle, theme.typography.h5]}>
-            System Metrics
-          </Text>
-          
-          <View style={styles.metricsGrid}>
-            <MetricCard
-              title="Total Users"
-              value={dashboardData.totalUsers.toString()}
-              icon="👥"
-              color={theme.colors.primary}
-              size="small"
-              style={styles.metricCard}
-              onPress={handleViewUserManagement}
-            />
-            
-            <MetricCard
-              title="Mechanics"
-              value={dashboardData.totalMechanics.toString()}
-              icon="🔧"
-              color={theme.colors.secondary}
-              size="small"
-              style={styles.metricCard}
-            />
-            
-            <MetricCard
-              title="Active Services"
-              value={dashboardData.activeServices.toString()}
-              icon="⚙️"
-              color={theme.colors.warning}
-              size="small"
-              style={styles.metricCard}
-            />
-            
-            <MetricCard
-              title="Revenue"
-              value={`R ${dashboardData.totalRevenue.toFixed(0)}`}
-              icon="💰"
-              color={theme.colors.success}
-              size="small"
-              style={styles.metricCard}
-            />
-          </View>
-        </View>
+        {/* Enhanced Key Metrics */}
+        {renderKeyMetrics()}
 
         {/* Service Overview */}
-        <View style={styles.metricsContainer}>
-          <Text style={[styles.sectionTitle, theme.typography.h5]}>
-            Service Overview
-          </Text>
-          
-          <View style={styles.metricsGrid}>
-            <MetricCard
-              title="Pending Quotes"
-              value={dashboardData.pendingQuotes.toString()}
-              icon="📋"
-              color={theme.colors.warning}
-              size="small"
-              style={styles.metricCard}
-            />
+        {renderServiceOverview()}
+
+        {/* Urgent Services Alert */}
+        {urgentServices.length > 0 && (
+          <Animated.View 
+            style={[styles.urgentSection, { opacity: fadeAnim }]}
+          >
+            <View style={[styles.urgentHeader, { backgroundColor: theme.colors.error + '20' }]}>
+              <Text style={[styles.urgentTitle, { color: theme.colors.error }]}>
+                🚨 Urgent Services ({urgentServices.length})
+              </Text>
+            </View>
             
-            <MetricCard
-              title="Completed"
-              value={dashboardData.completedServices.toString()}
-              icon="✅"
-              color={theme.colors.success}
-              size="small"
-              style={styles.metricCard}
-            />
-          </View>
-        </View>
+            {urgentServices.map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onPress={handleServicePress}
+                onApprove={handleApproveService}
+                userRole="ADMIN"
+                showAdminActions={true}
+              />
+            ))}
+          </Animated.View>
+        )}
 
         {/* Pending Services Requiring Attention */}
-        <View style={styles.section}>
+        <Animated.View 
+          style={[styles.section, { opacity: fadeAnim }]}
+        >
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, theme.typography.h5]}>
-              Pending Services
+              Pending Services ({pendingServices.length})
             </Text>
             {serviceRequests.length > 5 && (
               <TouchableOpacity onPress={handleViewAllServices}>
                 <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>
-                  View All
+                  View All ({serviceRequests.length})
                 </Text>
               </TouchableOpacity>
             )}
@@ -306,42 +484,77 @@ const AdminDashboard = ({ navigation }) => {
             ))
           ) : (
             <View style={[styles.emptyState, { backgroundColor: theme.colors.surface }]}>
+              <Text style={styles.emptyStateIcon}>✅</Text>
               <Text style={[styles.emptyStateText, theme.typography.body2]}>
-                No pending services requiring attention
+                All caught up!
+              </Text>
+              <Text style={[styles.emptyStateSubtext, theme.typography.caption]}>
+                No pending services require your attention
               </Text>
             </View>
           )}
-        </View>
+        </Animated.View>
 
-        {/* System Health */}
-        <View style={styles.section}>
+        {/* Enhanced System Health */}
+        <Animated.View 
+          style={[styles.section, { opacity: fadeAnim }]}
+        >
           <Text style={[styles.sectionTitle, theme.typography.h5]}>
             System Health
           </Text>
           
           <View style={[styles.healthCard, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthIndicator, { backgroundColor: theme.colors.success }]} />
-              <Text style={[styles.healthText, theme.typography.body2]}>
-                Database Connection: Healthy
-              </Text>
-            </View>
-            
-            <View style={styles.healthItem}>
-              <View style={[styles.healthIndicator, { backgroundColor: theme.colors.success }]} />
-              <Text style={[styles.healthText, theme.typography.body2]}>
-                API Response Time: 120ms
-              </Text>
-            </View>
-            
-            <View style={styles.healthItem}>
-              <View style={[styles.healthIndicator, { backgroundColor: theme.colors.warning }]} />
-              <Text style={[styles.healthText, theme.typography.body2]}>
-                Storage Usage: 78%
-              </Text>
+            <View style={styles.healthGrid}>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthIndicator, { backgroundColor: theme.colors.success }]} />
+                <View style={styles.healthInfo}>
+                  <Text style={[styles.healthTitle, theme.typography.body2]}>
+                    Database
+                  </Text>
+                  <Text style={[styles.healthStatus, theme.typography.caption]}>
+                    Operational (99.9%)
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.healthItem}>
+                <View style={[styles.healthIndicator, { backgroundColor: theme.colors.success }]} />
+                <View style={styles.healthInfo}>
+                  <Text style={[styles.healthTitle, theme.typography.body2]}>
+                    API Response
+                  </Text>
+                  <Text style={[styles.healthStatus, theme.typography.caption]}>
+                    120ms (Excellent)
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.healthItem}>
+                <View style={[styles.healthIndicator, { backgroundColor: theme.colors.warning }]} />
+                <View style={styles.healthInfo}>
+                  <Text style={[styles.healthTitle, theme.typography.body2]}>
+                    Storage
+                  </Text>
+                  <Text style={[styles.healthStatus, theme.typography.caption]}>
+                    78% used (Good)
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.healthItem}>
+                <View style={[styles.healthIndicator, { backgroundColor: theme.colors.info }]} />
+                <View style={styles.healthInfo}>
+                  <Text style={[styles.healthTitle, theme.typography.body2]}>
+                    Active Users
+                  </Text>
+                  <Text style={[styles.healthStatus, theme.typography.caption]}>
+                    {dashboardData.totalUsers + dashboardData.totalMechanics} online
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -355,94 +568,222 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 32,
+    flexGrow: 1,  // ensures it fills screen height
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+
+  // Enhanced Welcome Header
+  welcomeHeader: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  welcomeContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  greetingContainer: {
+    flex: 1,
+    marginRight: 16,
   },
   greeting: {
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   subGreeting: {
-    opacity: 0.7,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  todayWidget: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  todayNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  todayLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Improved Quick Actions
+  quickActionsContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
   quickActions: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    flexWrap: 'wrap',
+    marginTop: 16,
     gap: 12,
   },
-  primaryAction: {
+  quickActionCard: {
     flex: 1,
+    minWidth: (width - 60) / 2, // Responsive width
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  secondaryAction: {
-    flex: 1,
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
+  quickActionIconText: {
+    fontSize: 24,
+  },
+  quickActionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  quickActionSubtitle: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+
+  // Enhanced Metrics
   metricsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 16,
+    marginBottom: 16,
     gap: 12,
   },
   metricCard: {
     flex: 1,
     minWidth: '47%',
   },
+
+  // Enhanced Sections
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    paddingHorizontal: 24,
+    paddingTop: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    flex: 1,
+    fontWeight: 'bold',
+    fontSize: 20,
   },
   viewAllText: {
     fontSize: 14,
     fontWeight: '600',
   },
-  emptyState: {
-    padding: 24,
+
+  // Urgent Services
+  urgentSection: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  urgentHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 12,
+    marginBottom: 16,
+  },
+  urgentTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
+  // Enhanced Empty States
+  emptyState: {
+    borderRadius: 16,
+    padding: 32,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#E0E0E0',
     borderStyle: 'dashed',
   },
-  emptyStateText: {
-    textAlign: 'center',
-    opacity: 0.6,
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
   },
+  emptyStateText: {
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    opacity: 0.7,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  // Enhanced System Health
   healthCard: {
     marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  healthGrid: {
+    gap: 16,
   },
   healthItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
   healthIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 12,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 16,
   },
-  healthText: {
+  healthInfo: {
     flex: 1,
+  },
+  healthTitle: {
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  healthStatus: {
+    opacity: 0.7,
   },
 });
 

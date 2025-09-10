@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
@@ -20,10 +19,13 @@ import ServiceCard from '../../components/cards/ServiceCard';
 import VehicleCard from '../../components/cards/VehicleCard';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 const ClientDashboard = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { 
     vehicles, 
@@ -41,11 +43,10 @@ const ClientDashboard = ({ navigation }) => {
     loadDashboardData();
     
     // Fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 50, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 50, useNativeDriver: true, delay: 20 }),
+    ]).start();
   }, []);
 
   const loadDashboardData = async () => {
@@ -184,6 +185,7 @@ const ClientDashboard = ({ navigation }) => {
       style={[
         styles.welcomeHeader, 
         { backgroundColor: theme.colors.primary },
+        { paddingTop: insets.top + 20 }, // ensures space for status bar
         { opacity: fadeAnim }
       ]}
     >
@@ -353,7 +355,7 @@ const ClientDashboard = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -446,15 +448,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 32,
+    flexGrow: 1,  // ensures it fills screen height
   },
 
   // Welcome Header
   welcomeHeader: {
     paddingHorizontal: 24,
-    paddingTop: 20,
     paddingBottom: 32,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
   },
   welcomeContent: {
     flexDirection: 'row',
@@ -553,6 +559,7 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     minWidth: '47%',
+    margin: 10,
   },
 
   // Sections
