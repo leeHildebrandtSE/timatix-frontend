@@ -237,11 +237,12 @@ class ApiService {
   }
 
   // Health check - matches your backend endpoint
+  // Fix the health check method for backend using /api:
   async healthCheck() {
     try {
       console.log('🏥 Performing health check...');
       
-      // ✅ Use /health (baseURL already includes /api)
+      // Since BASE_URL already includes /api, just use /health
       const response = await this.get('/health');
       console.log('✅ Health check successful:', response);
       
