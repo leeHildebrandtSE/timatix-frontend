@@ -1,5 +1,14 @@
 import { TIME_FORMATS } from './constants';
 
+// Add this constant at the top:
+const TIME_FORMATS = {
+  DISPLAY_DATE: 'DISPLAY_DATE',
+  DISPLAY_DATETIME: 'DISPLAY_DATETIME',
+  DATE: 'DATE', 
+  TIME: 'TIME',
+  DATETIME: 'DATETIME',
+};
+
 /**
  * Format currency amount to South African Rand
  * @param {number} amount - The amount to format

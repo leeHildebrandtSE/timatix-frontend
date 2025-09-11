@@ -198,3 +198,18 @@ export default {
   validateVehicleForm,
   validateServiceRequestForm,
 };
+
+// Add missing constants
+const ERROR_MESSAGES = {
+  // ... existing messages
+  INVALID_EMAIL: 'Please enter a valid email address.',
+  INVALID_PHONE: 'Please enter a valid phone number.',
+  PASSWORD_TOO_SHORT: `Password must be at least ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} characters.`,
+  PASSWORDS_DONT_MATCH: 'Passwords do not match.',
+};
+
+const VALIDATION_RULES = {
+  // ... existing rules
+  NAME_MIN_LENGTH: 2,
+  NAME_MAX_LENGTH: 50,
+};

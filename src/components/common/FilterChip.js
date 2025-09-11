@@ -23,6 +23,16 @@ const FilterChip = ({
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
 
+  // Safety check for required styles
+  if (!globalStyles.filterChipBase) {
+    console.warn('FilterChip: Missing required globalStyles. Please update globalStyles.js');
+    return (
+      <TouchableOpacity onPress={onPress}>
+        <Text>{title}</Text>
+      </TouchableOpacity>
+    );
+  }
+
   const getChipStyles = () => {
     const styles = [globalStyles.filterChipBase];
 
@@ -94,6 +104,7 @@ const FilterChip = ({
     return styles;
   };
 
+  // Fix this in FilterChip.js:
   const getTextStyles = () => {
     const styles = [globalStyles.filterChipTextBase];
 
@@ -109,8 +120,11 @@ const FilterChip = ({
         styles.push(globalStyles.filterChipTextMedium);
     }
 
-    // Variant text styles
-    if (!priority && !status) { // Don't apply variant text colors if priority/status is set
+    // Priority and status chips always use white text
+    if (priority || status) {
+      styles.push(globalStyles.filterChipTextSolid);
+    } else {
+      // Apply variant text styles only for non-priority/non-status chips
       switch (variant) {
         case 'outline':
           styles.push(active ? globalStyles.filterChipTextOutlineActive : globalStyles.filterChipTextOutline);
@@ -121,9 +135,6 @@ const FilterChip = ({
         default:
           styles.push(active ? globalStyles.filterChipTextDefaultActive : globalStyles.filterChipTextDefault);
       }
-    } else {
-      // For priority and status chips, always use white text
-      styles.push(globalStyles.filterChipTextSolid);
     }
 
     // Disabled state

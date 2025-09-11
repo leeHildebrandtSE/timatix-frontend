@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, ActivityIndicator } from 'react-native';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 // Contexts & Constants
 import { useAuth } from '../context/AuthContext';
@@ -455,7 +456,11 @@ const MainNavigator = () => {
     }
   }, [isInitialized, isLoading, isAuthenticated, user?.role]); // ✅ Minimal dependencies
 
-  return navigatorComponent;
+  return (
+    <ErrorBoundary>
+      {navigatorComponent}
+    </ErrorBoundary>
+  );
 };
 
 export default MainNavigator;
