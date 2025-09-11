@@ -115,6 +115,8 @@ export const VALIDATION_RULES = {
   PHONE_REGEX: /^[\+]?[1-9][\d]{0,15}$/,
   PASSWORD_MIN_LENGTH: 6,
   VIN_LENGTH: 17,
+  NAME_MIN_LENGTH: 2,  // Add this
+  NAME_MAX_LENGTH: 50, // Add this
 };
 
 // Error Messages
@@ -124,6 +126,10 @@ export const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid email or password.',
   FIELD_REQUIRED: 'This field is required.',
   UNEXPECTED_ERROR: 'An unexpected error occurred.',
+  INVALID_EMAIL: 'Please enter a valid email address.',     // Add this
+  INVALID_PHONE: 'Please enter a valid phone number.',      // Add this
+  PASSWORD_TOO_SHORT: 'Password is too short.',             // Add this
+  PASSWORDS_DONT_MATCH: 'Passwords do not match.',          // Add this
 };
 
 export default {
@@ -135,4 +141,22 @@ export default {
   TEST_ACCOUNTS,
   VALIDATION_RULES,
   ERROR_MESSAGES,
+};
+
+// Add these missing constants:
+export const TIME_FORMATS = {
+  DISPLAY_DATE: 'DISPLAY_DATE',
+  DISPLAY_DATETIME: 'DISPLAY_DATETIME', 
+  DATE: 'DATE',
+  TIME: 'TIME',
+  DATETIME: 'DATETIME',
+};
+
+export const SERVICE_PHASES = {
+  RECEIVED: 'RECEIVED',
+  DIAGNOSIS: 'DIAGNOSIS', 
+  REPAIR_IN_PROGRESS: 'REPAIR_IN_PROGRESS',
+  TESTING: 'TESTING',
+  CLEANING: 'CLEANING',
+  READY_FOR_COLLECTION: 'READY_FOR_COLLECTION',
 };
