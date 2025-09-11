@@ -1913,6 +1913,177 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   filterChipTextActive: {
     color: theme.colors.primary,
   },
+  // Add these missing styles to globalStyles.js:
+  filterChipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  filterChipIconContainer: {
+    marginRight: spacing.xs,
+  },
+
+  filterChipIcon: {
+    fontSize: 14,
+  },
+
+  filterChipIconSmall: {
+    fontSize: 12,
+  },
+
+  filterChipIconLarge: {
+    fontSize: 16,
+  },
+
+  filterChipCountBadge: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: spacing.xs,
+  },
+
+  filterChipCountBadgeSmall: {
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+
+  filterChipCountBadgeLarge: {
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+
+  filterChipCountText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  filterChipCountTextSmall: {
+    fontSize: 9,
+  },
+
+  filterChipCountTextLarge: {
+    fontSize: 11,
+  },
+
+  filterChipRemoveButton: {
+    marginLeft: spacing.xs,
+    padding: 2,
+  },
+
+  filterChipRemoveIcon: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
+  // Priority styles
+  filterChipPriorityUrgent: {
+    backgroundColor: theme.colors.error,
+  },
+
+  filterChipPriorityHigh: {
+    backgroundColor: '#FF8C00',
+  },
+
+  filterChipPriorityNormal: {
+    backgroundColor: theme.colors.primary,
+  },
+
+  filterChipPriorityLow: {
+    backgroundColor: theme.colors.textSecondary,
+  },
+
+  // Status styles  
+  filterChipStatusSuccess: {
+    backgroundColor: theme.colors.success,
+  },
+
+  filterChipStatusWarning: {
+    backgroundColor: theme.colors.warning,
+  },
+
+  filterChipStatusError: {
+    backgroundColor: theme.colors.error,
+  },
+
+  filterChipStatusInfo: {
+    backgroundColor: theme.colors.info,
+  },
+
+  // Text styles
+  filterChipTextBase: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  filterChipTextSmall: {
+    fontSize: 12,
+  },
+
+  filterChipTextMedium: {
+    fontSize: 14,
+  },
+
+  filterChipTextLarge: {
+    fontSize: 16,
+  },
+
+  filterChipTextDefault: {
+    color: theme.colors.text,
+  },
+
+  filterChipTextDefaultActive: {
+    color: theme.colors.primary,
+  },
+
+  filterChipTextOutline: {
+    color: theme.colors.primary,
+  },
+
+  filterChipTextOutlineActive: {
+    color: theme.colors.primary,
+  },
+
+  filterChipTextSolid: {
+    color: '#fff',
+  },
+
+  filterChipTextSolidActive: {
+    color: '#fff',
+  },
+
+  filterChipTextDisabled: {
+    color: theme.colors.textLight,
+    opacity: 0.5,
+  },
+
+  filterChipDisabled: {
+    opacity: 0.5,
+    backgroundColor: theme.colors.disabled,
+  },
+
+  // Outline styles
+  filterChipOutline: {
+    backgroundColor: 'transparent',
+    borderColor: theme.colors.border,
+  },
+
+  filterChipOutlineActive: {
+    backgroundColor: 'transparent',
+    borderColor: theme.colors.primary,
+  },
+
+  // Solid styles
+  filterChipSolid: {
+    backgroundColor: theme.colors.textSecondary,
+  },
+
+  filterChipSolidActive: {
+    backgroundColor: theme.colors.primary,
+  },
 
   // =============================================================================
   // UTILITY STYLES
