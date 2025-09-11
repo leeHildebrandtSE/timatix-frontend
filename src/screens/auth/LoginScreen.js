@@ -1,483 +1,244 @@
-// Enhanced Login Screen with Modern UI
-import React, { useState, useEffect } from 'react';
+// =============================================================================
+// src/screens/auth/LoginScreen.js - Login Screen
+// =============================================================================
+
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  Dimensions,
-  Animated,
+  TextInput,
   TouchableOpacity,
-  StatusBar,
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { SUCCESS_MESSAGES } from '../../utils/constants';
-
-const { width, height } = Dimensions.get('window');
+import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
 
 const LoginScreen = ({ navigation }) => {
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login } = useAuth();
   const { theme } = useTheme();
-  
-  const [showLoading, setShowLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [errors, setErrors] = useState({});
+  const globalStyles = useGlobalStyles();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  // Animation values
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
-  const [scaleAnim] = useState(new Animated.Value(0.9));
-
-  useEffect(() => {
-    clearError();
-    startAnimations();
-  }, [clearError]);
-
-  useEffect(() => {
-    if (error) {
-      Alert.alert('Login Error', error, [
-        { text: 'OK', onPress: clearError }
-      ]);
-    }
-  }, [error, clearError]);
-
-  const startAnimations = () => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-    
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: null,
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleLogin = async () => {
-    if (!validateForm()) return;
-    
+    if (!email || !password) {
+      setErrors({
+        email: !email ? 'Email is required' : '',
+        password: !password ? 'Password is required' : '',
+      });
+      return;
+    }
+
+    setLoading(true);
+    setErrors({});
+
     try {
-      setShowLoading(true);
-      await login(formData);
-      Alert.alert('Success', SUCCESS_MESSAGES.LOGIN_SUCCESS);
+      await login(email, password);
     } catch (error) {
-      console.error('Login failed:', error);
+      Alert.alert('Login Failed', error.message || 'Please check your credentials and try again.');
     } finally {
-      setShowLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleNavigateToRegister = () => {
-    navigation.navigate('Register');
-  };
-
-  const handleForgotPassword = () => {
-    Alert.alert(
-      'Forgot Password',
-      'This feature will be available soon. For demo purposes, please use:\n\nEmail: demo@timatix.com\nPassword: demo123',
-      [{ text: 'OK' }]
-    );
-  };
-
-  const renderHeader = () => (
-    <Animated.View
-      style={[
-        styles.header,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim }
-          ],
-        },
-      ]}
-    >
-      {/* Logo */}
-      <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary + '20' }]}>
-        <Text style={styles.logoIcon}>⚙️</Text>
+  return (
+    <KeyboardAvoidingView style={globalStyles.authContainer} behavior="padding">
+      {/* Logo Section */}
+      <View style={globalStyles.authLogo}>
+        <View style={{
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          backgroundColor: theme.colors.primary,
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: 20,
+        }}>
+          <Text style={{ fontSize: 48, color: '#fff' }}>🚗</Text>
+        </View>
+        <Text style={[globalStyles.authLogoText, { color: theme.colors.primary }]}>
+          AutoCare
+        </Text>
       </View>
-      
-      {/* Welcome Text */}
-      <Text style={[styles.welcomeTitle, theme.typography.h1]}>
+
+      {/* Header */}
+      <Text style={[globalStyles.authTitle, { color: theme.colors.text }]}>
         Welcome Back
       </Text>
-      <Text style={[styles.welcomeSubtitle, theme.typography.body1]}>
-        Sign in to continue your journey
+      <Text style={[globalStyles.authSubtitle, { color: theme.colors.textSecondary }]}>
+        Sign in to access your account and manage your vehicles
       </Text>
-      
-      {/* Decorative line */}
-      <View style={[styles.decorativeLine, { backgroundColor: theme.colors.primary }]} />
-    </Animated.View>
-  );
 
-  const renderQuickLogin = () => (
-    <Animated.View
-      style={[
-        styles.quickLoginContainer,
-        { opacity: fadeAnim }
-      ]}
-    >
-      <Text style={[styles.quickLoginTitle, theme.typography.body2]}>
-        Quick Demo Login
-      </Text>
-      <View style={styles.quickLoginButtons}>
-        <TouchableOpacity
-          style={[styles.quickLoginButton, { backgroundColor: theme.colors.primary + '10' }]}
-          onPress={() => {
-            setFormData({
-              email: 'client@demo.com',
-              password: 'demo123'
-            });
-          }}
-        >
-          <Text style={[styles.quickLoginButtonText, { color: theme.colors.primary }]}>
-            👤 Client
+      {/* Form */}
+      <View style={globalStyles.authForm}>
+        {/* Email Input */}
+        <View style={globalStyles.inputContainer}>
+          <Text style={[globalStyles.inputLabel, { color: theme.colors.text }]}>
+            Email Address
           </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.quickLoginButton, { backgroundColor: theme.colors.secondary + '10' }]}
-          onPress={() => {
-            setFormData({
-              email: 'mechanic@demo.com',
-              password: 'demo123'
-            });
-          }}
-        >
-          <Text style={[styles.quickLoginButtonText, { color: theme.colors.secondary }]}>
-            🔧 Mechanic
+          <View style={[
+            globalStyles.inputFieldContainer,
+            errors.email && globalStyles.inputFieldError
+          ]}>
+            <View style={globalStyles.inputLeftIconContainer}>
+              <Text style={{ fontSize: 20 }}>📧</Text>
+            </View>
+            <TextInput
+              style={[globalStyles.inputField, { color: theme.colors.text }]}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({ ...errors, email: '' });
+              }}
+              placeholder="Enter your email"
+              placeholderTextColor={theme.colors.placeholder}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          {errors.email && (
+            <Text style={globalStyles.inputErrorText}>{errors.email}</Text>
+          )}
+        </View>
+
+        {/* Password Input */}
+        <View style={globalStyles.inputContainer}>
+          <Text style={[globalStyles.inputLabel, { color: theme.colors.text }]}>
+            Password
           </Text>
-        </TouchableOpacity>
-        
+          <View style={[
+            globalStyles.inputFieldContainer,
+            errors.password && globalStyles.inputFieldError
+          ]}>
+            <View style={globalStyles.inputLeftIconContainer}>
+              <Text style={{ fontSize: 20 }}>🔒</Text>
+            </View>
+            <TextInput
+              style={[globalStyles.inputField, { color: theme.colors.text }]}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors({ ...errors, password: '' });
+              }}
+              placeholder="Enter your password"
+              placeholderTextColor={theme.colors.placeholder}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              style={globalStyles.inputRightIconContainer}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Text style={{ fontSize: 20 }}>{showPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
+          {errors.password && (
+            <Text style={globalStyles.inputErrorText}>{errors.password}</Text>
+          )}
+        </View>
+
+        {/* Forgot Password */}
         <TouchableOpacity
-          style={[styles.quickLoginButton, { backgroundColor: theme.colors.error + '10' }]}
-          onPress={() => {
-            setFormData({
-              email: 'admin@demo.com',
-              password: 'admin123'
-            });
-          }}
+          style={{ alignSelf: 'flex-end', marginTop: -8 }}
+          onPress={() => navigation.navigate('ForgotPassword')}
         >
-          <Text style={[styles.quickLoginButtonText, { color: theme.colors.error }]}>
-            ⚡ Admin
+          <Text style={[globalStyles.authFooterLink, { color: theme.colors.primary }]}>
+            Forgot Password?
           </Text>
         </TouchableOpacity>
       </View>
-    </Animated.View>
-  );
 
-  const renderForm = () => (
-    <Animated.View
-      style={[
-        styles.formContainer,
-        { opacity: fadeAnim }
-      ]}
-    >
-      <View style={[styles.formCard, { backgroundColor: theme.colors.surface }]}>
-        <Input
-          label="Email Address"
-          value={formData.email}
-          onChangeText={(value) => handleInputChange('email', value)}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          error={errors.email}
-          leftIcon="📧"
-          containerStyle={styles.inputContainer}
-        />
+      {/* Submit Button */}
+      <TouchableOpacity
+        style={[
+          globalStyles.buttonBase,
+          globalStyles.authSubmitButton,
+          loading && globalStyles.buttonDisabled
+        ]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={globalStyles.buttonText}>
+          {loading ? 'Signing In...' : 'Sign In'}
+        </Text>
+      </TouchableOpacity>
 
-        <Input
-          label="Password"
-          value={formData.password}
-          onChangeText={(value) => handleInputChange('password', value)}
-          placeholder="Enter your password"
-          secureTextEntry={!showPassword}
-          autoComplete="password"
-          error={errors.password}
-          leftIcon="🔒"
-          rightIcon={showPassword ? "👁️" : "👁️‍🗨️"}
-          onRightIconPress={() => setShowPassword(!showPassword)}
-          containerStyle={styles.inputContainer}
-        />
+      {/* Divider */}
+      <View style={globalStyles.authDivider}>
+        <View style={[globalStyles.authDividerLine, { backgroundColor: theme.colors.border }]} />
+        <Text style={[globalStyles.authDividerText, { color: theme.colors.textSecondary }]}>
+          or
+        </Text>
+        <View style={[globalStyles.authDividerLine, { backgroundColor: theme.colors.border }]} />
+      </View>
 
+      {/* Demo Accounts */}
+      <View style={{ gap: 12, marginVertical: 16 }}>
         <TouchableOpacity
-          onPress={handleForgotPassword}
-          style={styles.forgotPasswordButton}
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.buttonOutline,
+            { backgroundColor: 'rgba(52, 199, 89, 0.1)', borderColor: '#34C759' }
+          ]}
+          onPress={() => {
+            setEmail('client@demo.com');
+            setPassword('demo123');
+          }}
         >
-          <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>
-            Forgot your password?
+          <Text style={[globalStyles.buttonText, { color: '#34C759' }]}>
+            👤 Demo Client Account
           </Text>
         </TouchableOpacity>
 
-        <Button
-          title="Sign In"
-          onPress={handleLogin}
-          loading={isLoading || showLoading}
-          disabled={isLoading || showLoading}
-          style={styles.loginButton}
-        />
-      </View>
-    </Animated.View>
-  );
+        <TouchableOpacity
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.buttonOutline,
+            { backgroundColor: 'rgba(255, 149, 0, 0.1)', borderColor: '#FF9500' }
+          ]}
+          onPress={() => {
+            setEmail('mechanic@demo.com');
+            setPassword('demo123');
+          }}
+        >
+          <Text style={[globalStyles.buttonText, { color: '#FF9500' }]}>
+            🔧 Demo Mechanic Account
+          </Text>
+        </TouchableOpacity>
 
-  const renderFooter = () => (
-    <Animated.View
-      style={[
-        styles.footer,
-        { opacity: fadeAnim }
-      ]}
-    >
-      <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-      
-      <View style={styles.registerContainer}>
-        <Text style={[styles.registerText, theme.typography.body2]}>
+        <TouchableOpacity
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.buttonOutline,
+            { backgroundColor: 'rgba(255, 59, 48, 0.1)', borderColor: '#FF3B30' }
+          ]}
+          onPress={() => {
+            setEmail('admin@demo.com');
+            setPassword('demo123');
+          }}
+        >
+          <Text style={[globalStyles.buttonText, { color: '#FF3B30' }]}>
+            👑 Demo Admin Account
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Footer */}
+      <View style={globalStyles.authFooter}>
+        <Text style={[globalStyles.authFooterText, { color: theme.colors.textSecondary }]}>
           Don't have an account?
         </Text>
-        <TouchableOpacity
-          onPress={handleNavigateToRegister}
-          style={styles.registerButton}
-        >
-          <Text style={[styles.registerButtonText, { color: theme.colors.primary }]}>
-            Create Account
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <Text style={[globalStyles.authFooterLink, { color: theme.colors.primary }]}>
+            Sign Up
           </Text>
         </TouchableOpacity>
       </View>
-
-      <Text style={[styles.footerText, theme.typography.caption]}>
-        By continuing, you agree to our Terms of Service and Privacy Policy
-      </Text>
-    </Animated.View>
-  );
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
-      
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          {renderHeader()}
-          
-          {/* Quick Login Options */}
-          {renderQuickLogin()}
-          
-          {/* Login Form */}
-          {renderForm()}
-          
-          {/* Footer */}
-          {renderFooter()}
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {(isLoading || showLoading) && (
-        <LoadingSpinner
-          overlay
-          message="Signing you in..."
-        />
-      )}
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
-
-  // Header
-  header: {
-    alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 40,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  logoIcon: {
-    fontSize: 36,
-  },
-  welcomeTitle: {
-    textAlign: 'center',
-    marginBottom: 8,
-    fontWeight: 'bold',
-  },
-  welcomeSubtitle: {
-    textAlign: 'center',
-    opacity: 0.7,
-    marginBottom: 20,
-  },
-  decorativeLine: {
-    width: 60,
-    height: 4,
-    borderRadius: 2,
-  },
-
-  // Quick Login
-  quickLoginContainer: {
-    marginBottom: 30,
-  },
-  quickLoginTitle: {
-    textAlign: 'center',
-    marginBottom: 16,
-    opacity: 0.8,
-    fontWeight: '600',
-  },
-  quickLoginButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  quickLoginButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  quickLoginButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  // Form
-  formContainer: {
-    marginBottom: 30,
-  },
-  formCard: {
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loginButton: {
-    height: 52,
-    borderRadius: 16,
-  },
-
-  // Footer
-  footer: {
-    alignItems: 'center',
-  },
-  divider: {
-    width: '100%',
-    height: 1,
-    marginBottom: 24,
-    opacity: 0.3,
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 8,
-  },
-  registerText: {
-    opacity: 0.7,
-  },
-  registerButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  registerButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footerText: {
-    textAlign: 'center',
-    opacity: 0.6,
-    lineHeight: 18,
-    maxWidth: 280,
-  },
-});
-
-export default LoginScreen;

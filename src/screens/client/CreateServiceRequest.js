@@ -1,742 +1,461 @@
+// =============================================================================
+// REFACTORED FORM AND DETAIL SCREENS WITH GLOBAL STYLES
+// =============================================================================
+
+// src/screens/client/CreateServiceRequest.js - Create Service Request Form
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
   Alert,
-  Modal,
-  FlatList,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { useTheme } from '../../context/ThemeContext';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { SERVICE_TYPES } from '../../utils/constants';
-import { validateServiceRequestForm } from '../../utils/validation';
-import { serviceRequestsService } from '../../services/serviceRequestsService';
+import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
 
-const CreateServiceRequest = () => {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { vehicleId: preselectedVehicleId } = route.params || {};
-  
+const CreateServiceRequest = ({ route, navigation }) => {
+  const { vehicleId } = route?.params || {};
   const { user } = useAuth();
-  const { 
-    vehicles, 
-    addServiceRequest,
-    addNotification,
-    isLoading,
-    setLoading 
-  } = useApp();
+  const { vehicles, createServiceRequest, addNotification } = useApp();
   const { theme } = useTheme();
-  
+  const globalStyles = useGlobalStyles();
+
   const [formData, setFormData] = useState({
-    vehicleId: preselectedVehicleId || '',
+    vehicleId: vehicleId || '',
     serviceType: '',
-    preferredDate: '',
-    preferredTime: '',
-    urgency: 'NORMAL',
+    priority: 'normal',
     description: '',
-    notes: '',
-    location: 'WORKSHOP', // WORKSHOP, MOBILE
-    contactPhone: user?.phoneNumber || '',
+    preferredDate: '',
+    contactMethod: 'phone',
+    specialInstructions: '',
   });
-  
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [showVehicleModal, setShowVehicleModal] = useState(false);
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [showTimeSlots, setShowTimeSlots] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (vehicles.length === 0) {
-      Alert.alert(
-        'No Vehicles',
-        'You need to add a vehicle before creating a service request.',
-        [
-          { text: 'Cancel', onPress: () => navigation.goBack() },
-          { text: 'Add Vehicle', onPress: () => navigation.navigate('Vehicles') },
-        ]
-      );
-    }
-  }, [vehicles]);
+  const serviceTypes = [
+    { id: 'oil-change', label: 'Oil Change', icon: '🛢️' },
+    { id: 'brake-service', label: 'Brake Service', icon: '🛑' },
+    { id: 'tire-service', label: 'Tire Service', icon: '⚙️' },
+    { id: 'engine-diagnostic', label: 'Engine Diagnostic', icon: '🔍' },
+    { id: 'transmission', label: 'Transmission Service', icon: '⚙️' },
+    { id: 'electrical', label: 'Electrical System', icon: '⚡' },
+    { id: 'air-conditioning', label: 'A/C Service', icon: '❄️' },
+    { id: 'general-maintenance', label: 'General Maintenance', icon: '🔧' },
+  ];
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: null,
-      }));
-    }
-
-    // Load time slots when date changes
-    if (field === 'preferredDate' && value) {
-      loadAvailableSlots(value);
-    }
-  };
-
-  const loadAvailableSlots = async (date) => {
-    try {
-      const slots = await serviceRequestsService.getAvailableSlots(date);
-      setAvailableSlots(slots);
-    } catch (error) {
-      console.error('Error loading time slots:', error);
-      // Mock time slots
-      const mockSlots = [
-        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-        '11:00', '11:30', '13:00', '13:30', '14:00', '14:30',
-        '15:00', '15:30', '16:00', '16:30', '17:00'
-      ];
-      setAvailableSlots(mockSlots);
-    }
-  };
+  const priorities = [
+    { id: 'low', label: 'Low', description: 'Can wait a few weeks', color: '#34C759' },
+    { id: 'normal', label: 'Normal', description: 'Within next week', color: '#007AFF' },
+    { id: 'high', label: 'High', description: 'Within 2-3 days', color: '#FF9500' },
+    { id: 'urgent', label: 'Urgent', description: 'ASAP - safety concern', color: '#FF3B30' },
+  ];
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.vehicleId) {
-      newErrors.vehicleId = 'Please select a vehicle';
-    }
-    
-    if (!formData.serviceType) {
-      newErrors.serviceType = 'Please select a service type';
-    }
-    
-    if (!formData.preferredDate) {
-      newErrors.preferredDate = 'Please select a preferred date';
-    } else {
-      const selectedDate = new Date(formData.preferredDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (selectedDate < today) {
-        newErrors.preferredDate = 'Date cannot be in the past';
-      }
-    }
-    
-    if (!formData.preferredTime) {
-      newErrors.preferredTime = 'Please select a preferred time';
-    }
-    
-    if (!formData.description || formData.description.trim().length < 10) {
-      newErrors.description = 'Please provide a detailed description (at least 10 characters)';
-    }
-    
-    if (!formData.contactPhone) {
-      newErrors.contactPhone = 'Contact phone number is required';
-    }
-    
+
+    if (!formData.vehicleId) newErrors.vehicleId = 'Please select a vehicle';
+    if (!formData.serviceType) newErrors.serviceType = 'Please select a service type';
+    if (!formData.description.trim()) newErrors.description = 'Please describe the issue';
+    if (!formData.preferredDate) newErrors.preferredDate = 'Please select a preferred date';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
+    setLoading(true);
     try {
-      setSubmitting(true);
-      
-      const requestData = {
+      await createServiceRequest({
         ...formData,
-        userId: user.id,
-        status: 'PENDING_QUOTE',
+        clientId: user.id,
+        status: 'pending',
         createdAt: new Date().toISOString(),
-      };
-      
-      const newRequest = await serviceRequestsService.createRequest(requestData);
-      addServiceRequest(newRequest);
-      
-      addNotification({
-        title: 'Service Request Created',
-        message: `Your ${formData.serviceType} request has been submitted successfully.`,
-        type: 'success',
       });
       
-      Alert.alert(
-        'Request Submitted',
-        'Your service request has been submitted. You will receive a quote within 24 hours.',
-        [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]
-      );
+      addNotification('Service request created successfully!');
+      navigation.goBack();
     } catch (error) {
-      console.error('Error creating service request:', error);
       Alert.alert('Error', 'Failed to create service request. Please try again.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const getSelectedVehicle = () => {
-    return vehicles.find(v => v.id === formData.vehicleId);
-  };
-
-  const getUrgencyColor = (urgency) => {
-    switch (urgency) {
-      case 'URGENT': return theme.colors.error;
-      case 'HIGH': return '#FF8C00';
-      case 'NORMAL': return theme.colors.primary;
-      case 'LOW': return theme.colors.info;
-      default: return theme.colors.primary;
+  const updateFormData = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: '' });
     }
   };
 
-  const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  };
-
-  const getMaxDate = () => {
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 60); // 60 days from now
-    return maxDate.toISOString().split('T')[0];
-  };
-
-  const renderVehicleModal = () => (
-    <Modal
-      visible={showVehicleModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowVehicleModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, theme.typography.h6]}>
-              Select Vehicle
-            </Text>
-            <TouchableOpacity onPress={() => setShowVehicleModal(false)}>
-              <Text style={[styles.modalClose, { color: theme.colors.primary }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            data={vehicles}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.vehicleItem, { borderBottomColor: theme.colors.border }]}
-                onPress={() => {
-                  handleInputChange('vehicleId', item.id);
-                  setShowVehicleModal(false);
-                }}
-              >
-                <Text style={[styles.vehicleText, theme.typography.body1]}>
-                  {item.year} {item.make} {item.model}
-                </Text>
-                <Text style={[styles.vehicleSubtext, theme.typography.caption]}>
-                  {item.licensePlate}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const renderServiceModal = () => (
-    <Modal
-      visible={showServiceModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowServiceModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, theme.typography.h6]}>
-              Select Service Type
-            </Text>
-            <TouchableOpacity onPress={() => setShowServiceModal(false)}>
-              <Text style={[styles.modalClose, { color: theme.colors.primary }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            data={Object.entries(SERVICE_TYPES)}
-            keyExtractor={([key]) => key}
-            renderItem={({ item: [key, value] }) => (
-              <TouchableOpacity
-                style={[styles.serviceItem, { borderBottomColor: theme.colors.border }]}
-                onPress={() => {
-                  handleInputChange('serviceType', value);
-                  setShowServiceModal(false);
-                }}
-              >
-                <Text style={[styles.serviceText, theme.typography.body1]}>
-                  {value}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const renderTimeSlotModal = () => (
-    <Modal
-      visible={showTimeSlots}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowTimeSlots(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, theme.typography.h6]}>
-              Available Time Slots
-            </Text>
-            <TouchableOpacity onPress={() => setShowTimeSlots(false)}>
-              <Text style={[styles.modalClose, { color: theme.colors.primary }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            data={availableSlots}
-            keyExtractor={(item) => item}
-            numColumns={3}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.timeSlot, { backgroundColor: theme.colors.background }]}
-                onPress={() => {
-                  handleInputChange('preferredTime', item);
-                  setShowTimeSlots(false);
-                }}
-              >
-                <Text style={[styles.timeSlotText, theme.typography.body2]}>
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </View>
-    </Modal>
-  );
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <LoadingSpinner message="Loading..." />
-      </SafeAreaView>
-    );
-  }
-
-  const selectedVehicle = getSelectedVehicle();
+  const selectedVehicle = vehicles?.find(v => v.id === formData.vehicleId);
+  const selectedServiceType = serviceTypes.find(s => s.id === formData.serviceType);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, theme.typography.h3]}>
-            Book Service
-          </Text>
-          <Text style={[styles.subtitle, theme.typography.body2]}>
-            Schedule maintenance for your vehicle
-          </Text>
-        </View>
-
-        {/* Vehicle Selection */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, theme.typography.h6]}>
-            Vehicle *
-          </Text>
+    <KeyboardAvoidingView style={globalStyles.formContainer} behavior="padding">
+      {/* Awesome Header */}
+      <View style={[
+        globalStyles.dashboardGradientHeader,
+        {
+          background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)',
+          backgroundColor: '#FF6B6B',
+          paddingTop: 60,
+          paddingBottom: 30,
+        }
+      ]}>
+        <View style={globalStyles.dashboardHeaderContent}>
+          <View style={globalStyles.dashboardGreeting}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{ fontSize: 32, marginRight: 12 }}>🔧</Text>
+              <Text style={[globalStyles.dashboardGreetingText, { fontSize: 26 }]}>
+                Book Service
+              </Text>
+            </View>
+            <Text style={globalStyles.dashboardGreetingSubtext}>
+              Schedule professional maintenance for your vehicle
+            </Text>
+          </View>
+          
           <TouchableOpacity
-            style={[styles.selector, { borderColor: errors.vehicleId ? theme.colors.error : theme.colors.border }]}
-            onPress={() => setShowVehicleModal(true)}
+            style={[globalStyles.dashboardProfileButton, {
+              backgroundColor: 'rgba(255,255,255,0.25)',
+            }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={[globalStyles.dashboardProfileIcon, { fontSize: 24 }]}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={globalStyles.formScrollContent}>
+        {/* Vehicle Selection */}
+        <View style={globalStyles.formSection}>
+          <Text style={[globalStyles.formSectionTitle, { color: theme.colors.text }]}>
+            Select Vehicle
+          </Text>
+          <Text style={[globalStyles.formSectionSubtitle, { color: theme.colors.textSecondary }]}>
+            Choose which vehicle needs service
+          </Text>
+
+          <TouchableOpacity
+            style={[
+              globalStyles.createServiceVehicleSelector,
+              { borderColor: errors.vehicleId ? theme.colors.error : theme.colors.border }
+            ]}
+            onPress={() => {
+              // Show vehicle selection modal
+              navigation.navigate('VehicleSelector', {
+                onSelect: (vehicle) => updateFormData('vehicleId', vehicle.id)
+              });
+            }}
           >
             <Text style={[
-              styles.selectorText, 
-              theme.typography.input,
-              { color: selectedVehicle ? theme.colors.text : theme.colors.textLight }
+              globalStyles.createServiceVehicleSelectorText,
+              !selectedVehicle && globalStyles.createServiceVehicleSelectorPlaceholder,
+              { color: selectedVehicle ? theme.colors.text : theme.colors.placeholder }
             ]}>
-              {selectedVehicle ? 
-                `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}` : 
-                'Select vehicle'
+              {selectedVehicle 
+                ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}` 
+                : 'Select a vehicle'
               }
             </Text>
-            <Text style={[styles.chevron, { color: theme.colors.textSecondary }]}>▼</Text>
+            <Text style={[globalStyles.createServiceVehicleSelectorChevron, { color: theme.colors.textSecondary }]}>
+              ›
+            </Text>
           </TouchableOpacity>
           {errors.vehicleId && (
-            <Text style={[styles.errorText, theme.typography.error]}>
-              {errors.vehicleId}
-            </Text>
+            <Text style={globalStyles.inputErrorText}>{errors.vehicleId}</Text>
           )}
         </View>
 
         {/* Service Type Selection */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, theme.typography.h6]}>
-            Service Type *
+        <View style={globalStyles.formSection}>
+          <Text style={[globalStyles.formSectionTitle, { color: theme.colors.text }]}>
+            Service Type
           </Text>
-          <TouchableOpacity
-            style={[styles.selector, { borderColor: errors.serviceType ? theme.colors.error : theme.colors.border }]}
-            onPress={() => setShowServiceModal(true)}
-          >
-            <Text style={[
-              styles.selectorText, 
-              theme.typography.input,
-              { color: formData.serviceType ? theme.colors.text : theme.colors.textLight }
-            ]}>
-              {formData.serviceType || 'Select service type'}
-            </Text>
-            <Text style={[styles.chevron, { color: theme.colors.textSecondary }]}>▼</Text>
-          </TouchableOpacity>
-          {errors.serviceType && (
-            <Text style={[styles.errorText, theme.typography.error]}>
-              {errors.serviceType}
-            </Text>
-          )}
-        </View>
+          <Text style={[globalStyles.formSectionSubtitle, { color: theme.colors.textSecondary }]}>
+            What type of service do you need?
+          </Text>
 
-        {/* Date & Time */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, theme.typography.h6]}>
-            Preferred Date & Time *
-          </Text>
-          
-          <View style={styles.dateTimeRow}>
-            <Input
-              label="Date"
-              value={formData.preferredDate}
-              onChangeText={(value) => handleInputChange('preferredDate', value)}
-              placeholder="YYYY-MM-DD"
-              error={errors.preferredDate}
-              style={styles.dateInput}
-            />
-            
-            <TouchableOpacity
-              style={[styles.timeSelector, { borderColor: errors.preferredTime ? theme.colors.error : theme.colors.border }]}
-              onPress={() => formData.preferredDate ? setShowTimeSlots(true) : Alert.alert('Please select a date first')}
-            >
-              <Text style={[styles.timeLabel, theme.typography.label]}>Time</Text>
-              <Text style={[
-                styles.timeSelectorText,
-                { color: formData.preferredTime ? theme.colors.text : theme.colors.textLight }
-              ]}>
-                {formData.preferredTime || 'Select time'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {errors.preferredTime && (
-            <Text style={[styles.errorText, theme.typography.error]}>
-              {errors.preferredTime}
-            </Text>
-          )}
-        </View>
-
-        {/* Urgency */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, theme.typography.h6]}>
-            Urgency
-          </Text>
-          <View style={styles.urgencyContainer}>
-            {['LOW', 'NORMAL', 'HIGH', 'URGENT'].map((urgency) => (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
+            {serviceTypes.map((service) => (
               <TouchableOpacity
-                key={urgency}
+                key={service.id}
                 style={[
-                  styles.urgencyButton,
-                  formData.urgency === urgency && { backgroundColor: getUrgencyColor(urgency) },
+                  globalStyles.filterChipBase,
+                  globalStyles.filterChipMedium,
+                  {
+                    minWidth: '45%',
+                    paddingVertical: 16,
+                    paddingHorizontal: 12,
+                  },
+                  formData.serviceType === service.id
+                    ? { backgroundColor: theme.colors.primary + '20', borderColor: theme.colors.primary }
+                    : { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }
                 ]}
-                onPress={() => handleInputChange('urgency', urgency)}
+                onPress={() => updateFormData('serviceType', service.id)}
               >
-                <Text
-                  style={[
-                    styles.urgencyButtonText,
-                    formData.urgency === urgency && { color: '#fff' },
-                    { color: theme.colors.text },
-                  ]}
-                >
-                  {urgency}
+                <Text style={{ fontSize: 20, marginBottom: 4 }}>{service.icon}</Text>
+                <Text style={[
+                  globalStyles.filterChipText,
+                  {
+                    color: formData.serviceType === service.id ? theme.colors.primary : theme.colors.text,
+                    fontWeight: formData.serviceType === service.id ? '600' : '500',
+                    textAlign: 'center',
+                  }
+                ]}>
+                  {service.label}
                 </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {errors.serviceType && (
+            <Text style={globalStyles.inputErrorText}>{errors.serviceType}</Text>
+          )}
+        </View>
+
+        {/* Priority Selection */}
+        <View style={globalStyles.formSection}>
+          <Text style={[globalStyles.formSectionTitle, { color: theme.colors.text }]}>
+            Priority Level
+          </Text>
+          <Text style={[globalStyles.formSectionSubtitle, { color: theme.colors.textSecondary }]}>
+            How urgent is this service?
+          </Text>
+
+          <View style={globalStyles.createServicePriorityContainer}>
+            {priorities.map((priority) => (
+              <TouchableOpacity
+                key={priority.id}
+                style={[
+                  globalStyles.createServicePriorityOption,
+                  {
+                    marginBottom: 12,
+                    padding: 16,
+                    borderColor: formData.priority === priority.id ? priority.color : theme.colors.border,
+                    backgroundColor: formData.priority === priority.id ? priority.color + '15' : theme.colors.surface,
+                  }
+                ]}
+                onPress={() => updateFormData('priority', priority.id)}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View>
+                    <Text style={[
+                      globalStyles.createServicePriorityOptionText,
+                      {
+                        color: formData.priority === priority.id ? priority.color : theme.colors.text,
+                        fontWeight: '600',
+                        marginBottom: 4,
+                      }
+                    ]}>
+                      {priority.label}
+                    </Text>
+                    <Text style={[
+                      globalStyles.createServicePriorityOptionText,
+                      {
+                        color: theme.colors.textSecondary,
+                        fontSize: 12,
+                      }
+                    ]}>
+                      {priority.description}
+                    </Text>
+                  </View>
+                  {formData.priority === priority.id && (
+                    <View style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: priority.color,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         {/* Description */}
-        <View style={styles.section}>
-          <Input
-            label="Problem Description *"
-            value={formData.description}
-            onChangeText={(value) => handleInputChange('description', value)}
-            placeholder="Describe the issue or service needed..."
-            multiline
-            numberOfLines={4}
-            error={errors.description}
-            required
-          />
-        </View>
-
-        {/* Additional Notes */}
-        <View style={styles.section}>
-          <Input
-            label="Additional Notes"
-            value={formData.notes}
-            onChangeText={(value) => handleInputChange('notes', value)}
-            placeholder="Any additional information..."
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-
-        {/* Service Location */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, theme.typography.h6]}>
-            Service Location
+        <View style={globalStyles.formSection}>
+          <Text style={[globalStyles.formSectionTitle, { color: theme.colors.text }]}>
+            Problem Description
           </Text>
-          <View style={styles.locationContainer}>
-            <TouchableOpacity
+          <Text style={[globalStyles.formSectionSubtitle, { color: theme.colors.textSecondary }]}>
+            Describe the issue or service needed in detail
+          </Text>
+
+          <View style={[
+            globalStyles.inputFieldContainer,
+            { minHeight: 120, alignItems: 'flex-start' },
+            errors.description && globalStyles.inputFieldError
+          ]}>
+            <TextInput
               style={[
-                styles.locationButton,
-                formData.location === 'WORKSHOP' && { backgroundColor: theme.colors.primary },
+                globalStyles.inputField,
+                globalStyles.inputFieldMultiline,
+                { color: theme.colors.text, minHeight: 100 }
               ]}
-              onPress={() => handleInputChange('location', 'WORKSHOP')}
-            >
-              <Text
-                style={[
-                  styles.locationButtonText,
-                  formData.location === 'WORKSHOP' && { color: '#fff' },
-                  { color: theme.colors.text },
-                ]}
-              >
-                🏪 Workshop
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
+              value={formData.description}
+              onChangeText={(text) => updateFormData('description', text)}
+              placeholder="Describe the problem, symptoms, or service needed..."
+              placeholderTextColor={theme.colors.placeholder}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+            />
+          </View>
+          {errors.description && (
+            <Text style={globalStyles.inputErrorText}>{errors.description}</Text>
+          )}
+        </View>
+
+        {/* Preferred Date */}
+        <View style={globalStyles.formSection}>
+          <Text style={[globalStyles.formSectionTitle, { color: theme.colors.text }]}>
+            Preferred Date
+          </Text>
+          <Text style={[globalStyles.formSectionSubtitle, { color: theme.colors.textSecondary }]}>
+            When would you like this service to be performed?
+          </Text>
+
+          <TouchableOpacity
+            style={[
+              globalStyles.createServiceVehicleSelector,
+              { borderColor: errors.preferredDate ? theme.colors.error : theme.colors.border }
+            ]}
+            onPress={() => {
+              // Show date picker
+              // For demo, just set a date
+              updateFormData('preferredDate', '2024-02-15');
+            }}
+          >
+            <Text style={[
+              globalStyles.createServiceVehicleSelectorText,
+              !formData.preferredDate && globalStyles.createServiceVehicleSelectorPlaceholder,
+              { color: formData.preferredDate ? theme.colors.text : theme.colors.placeholder }
+            ]}>
+              {formData.preferredDate || 'Select preferred date'}
+            </Text>
+            <Text style={[globalStyles.createServiceVehicleSelectorChevron, { color: theme.colors.textSecondary }]}>
+              📅
+            </Text>
+          </TouchableOpacity>
+          {errors.preferredDate && (
+            <Text style={globalStyles.inputErrorText}>{errors.preferredDate}</Text>
+          )}
+        </View>
+
+        {/* Special Instructions */}
+        <View style={globalStyles.formSection}>
+          <Text style={[globalStyles.formSectionTitle, { color: theme.colors.text }]}>
+            Special Instructions (Optional)
+          </Text>
+          <Text style={[globalStyles.formSectionSubtitle, { color: theme.colors.textSecondary }]}>
+            Any additional notes or special requirements
+          </Text>
+
+          <View style={[globalStyles.inputFieldContainer, { minHeight: 80, alignItems: 'flex-start' }]}>
+            <TextInput
               style={[
-                styles.locationButton,
-                formData.location === 'MOBILE' && { backgroundColor: theme.colors.primary },
+                globalStyles.inputField,
+                globalStyles.inputFieldMultiline,
+                { color: theme.colors.text, minHeight: 60 }
               ]}
-              onPress={() => handleInputChange('location', 'MOBILE')}
-            >
-              <Text
-                style={[
-                  styles.locationButtonText,
-                  formData.location === 'MOBILE' && { color: '#fff' },
-                  { color: theme.colors.text },
-                ]}
-              >
-                🚐 Mobile Service
-              </Text>
-            </TouchableOpacity>
+              value={formData.specialInstructions}
+              onChangeText={(text) => updateFormData('specialInstructions', text)}
+              placeholder="Any special instructions, pickup/delivery requests, etc."
+              placeholderTextColor={theme.colors.placeholder}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
           </View>
         </View>
 
-        {/* Contact Phone */}
-        <View style={styles.section}>
-          <Input
-            label="Contact Phone *"
-            value={formData.contactPhone}
-            onChangeText={(value) => handleInputChange('contactPhone', value)}
-            placeholder="Enter contact phone number"
-            keyboardType="phone-pad"
-            error={errors.contactPhone}
-            required
-          />
-        </View>
-
-        {/* Submit Button */}
-        <Button
-          title="Submit Service Request"
-          onPress={handleSubmit}
-          loading={submitting}
-          disabled={submitting}
-          style={styles.submitButton}
-        />
+        {/* Summary Card */}
+        {formData.vehicleId && formData.serviceType && (
+          <View style={[
+            globalStyles.card,
+            { 
+              backgroundColor: theme.colors.primary + '10', 
+              borderColor: theme.colors.primary,
+              marginHorizontal: 20,
+              marginBottom: 20,
+            }
+          ]}>
+            <Text style={[globalStyles.cardTitle, { color: theme.colors.primary }]}>
+              📋 Service Summary
+            </Text>
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={[theme.typography.body2, { color: theme.colors.textSecondary }]}>
+                  Vehicle:
+                </Text>
+                <Text style={[theme.typography.body2, { color: theme.colors.text, fontWeight: '500' }]}>
+                  {selectedVehicle?.year} {selectedVehicle?.make} {selectedVehicle?.model}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={[theme.typography.body2, { color: theme.colors.textSecondary }]}>
+                  Service:
+                </Text>
+                <Text style={[theme.typography.body2, { color: theme.colors.text, fontWeight: '500' }]}>
+                  {selectedServiceType?.label}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={[theme.typography.body2, { color: theme.colors.textSecondary }]}>
+                  Priority:
+                </Text>
+                <View style={{
+                  backgroundColor: priorities.find(p => p.id === formData.priority)?.color + '20',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 12,
+                }}>
+                  <Text style={[
+                    theme.typography.body2,
+                    { 
+                      color: priorities.find(p => p.id === formData.priority)?.color,
+                      fontWeight: '600',
+                      fontSize: 11,
+                    }
+                  ]}>
+                    {priorities.find(p => p.id === formData.priority)?.label.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
-      {renderVehicleModal()}
-      {renderServiceModal()}
-      {renderTimeSlotModal()}
-    </SafeAreaView>
+      {/* Submit Button */}
+      <View style={{ padding: 20, paddingTop: 0 }}>
+        <TouchableOpacity
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.createServiceSubmitButton,
+            loading && globalStyles.buttonDisabled,
+            { marginTop: 0 }
+          ]}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={globalStyles.buttonText}>
+            {loading ? 'Creating Request...' : 'Submit Service Request'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-  },
-  title: {
-    marginBottom: 4,
-  },
-  subtitle: {
-    opacity: 0.7,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-  },
-  selector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-  },
-  selectorText: {
-    flex: 1,
-  },
-  chevron: {
-    fontSize: 12,
-  },
-  dateTimeRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dateInput: {
-    flex: 1,
-  },
-  timeSelector: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-  },
-  timeLabel: {
-    marginBottom: 4,
-  },
-  timeSelectorText: {
-    fontSize: 16,
-  },
-  urgencyContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  urgencyButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-  },
-  urgencyButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  locationButton: {
-    flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-  },
-  locationButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  errorText: {
-    marginTop: 4,
-  },
-  submitButton: {
-    marginHorizontal: 20,
-    marginTop: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '80%',
-    maxHeight: '70%',
-    borderRadius: 12,
-    padding: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  modalTitle: {
-    flex: 1,
-  },
-  modalClose: {
-    fontWeight: '600',
-  },
-  vehicleItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-  },
-  vehicleText: {
-    marginBottom: 2,
-  },
-  vehicleSubtext: {
-    opacity: 0.7,
-  },
-  serviceItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-  },
-  serviceText: {
-    // Styles from theme
-  },
-  timeSlot: {
-    flex: 1,
-    margin: 4,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  timeSlotText: {
-    fontWeight: '500',
-  },
-});
-
-export default CreateServiceRequest;

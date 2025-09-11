@@ -1,646 +1,477 @@
-// src/screens/shared/CreateQuote.js
+// =============================================================================
+// src/screens/shared/CreateQuote.js - Create Quote Form
+// =============================================================================
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
   Alert,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../context/AuthContext';
-import { useApp } from '../../context/AppContext';
-import { useTheme } from '../../context/ThemeContext';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { formatCurrency } from '../../utils/formatters';
-import { SERVICE_STATUS } from '../../utils/constants';
 
-const CreateQuote = () => {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { jobId } = route.params;
-  
+const CreateQuote = ({ route, navigation }) => {
+  const { jobId } = route?.params || {};
   const { user } = useAuth();
-  const { 
-    serviceRequests, 
-    updateServiceRequest,
-    addNotification,
-    isLoading,
-    setLoading 
-  } = useApp();
+  const { serviceRequests, createQuote, addNotification } = useApp();
   const { theme } = useTheme();
-  
+  const globalStyles = useGlobalStyles();
+
   const [job, setJob] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [quoteForm, setQuoteForm] = useState({
-    laborHours: '',
-    laborRate: '450', // Default R450/hour
-    parts: [
-      { description: '', quantity: '1', unitPrice: '', total: '0' }
-    ],
-    miscCharges: '0',
-    discount: '0',
+  const [quoteData, setQuoteData] = useState({
+    serviceType: '',
+    vehicleInfo: '',
+    clientName: '',
+    validUntil: '',
     notes: '',
   });
-
+  const [items, setItems] = useState([
+    { id: 1, description: '', quantity: 1, price: 0, total: 0 }
+  ]);
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    loadJobDetails();
+    if (jobId) {
+      loadJobDetails();
+    }
   }, [jobId]);
 
   const loadJobDetails = async () => {
-    try {
-      setLoading(true);
-      
-      // Find job in local state
-      const foundJob = serviceRequests.find(s => s.id === jobId);
-      if (foundJob) {
-        setJob(foundJob);
-      } else {
-        Alert.alert('Error', 'Job not found');
-        navigation.goBack();
+    const foundJob = serviceRequests?.find(j => j.id === jobId);
+    if (foundJob) {
+      setJob(foundJob);
+      setQuoteData({
+        serviceType: foundJob.serviceType,
+        vehicleInfo: foundJob.vehicleInfo,
+        clientName: foundJob.clientName || '',
+        validUntil: getDefaultValidDate(),
+        notes: '',
+      });
+    }
+  };
+
+  const getDefaultValidDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30); // 30 days from now
+    return date.toISOString().split('T')[0];
+  };
+
+  const addItem = () => {
+    const newItem = {
+      id: items.length + 1,
+      description: '',
+      quantity: 1,
+      price: 0,
+      total: 0,
+    };
+    setItems([...items, newItem]);
+  };
+
+  const updateItem = (id, field, value) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        const updatedItem = { ...item, [field]: value };
+        if (field === 'quantity' || field === 'price') {
+          updatedItem.total = updatedItem.quantity * updatedItem.price;
+        }
+        return updatedItem;
       }
+      return item;
+    }));
+  };
+
+  const removeItem = (id) => {
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
+    }
+  };
+
+  const calculateSubtotal = () => {
+    return items.reduce((sum, item) => sum + item.total, 0);
+  };
+
+  const calculateTax = () => {
+    return calculateSubtotal() * 0.08; // 8% tax
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax();
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!quoteData.serviceType.trim()) newErrors.serviceType = 'Service type is required';
+    if (!quoteData.vehicleInfo.trim()) newErrors.vehicleInfo = 'Vehicle info is required';
+    if (!quoteData.clientName.trim()) newErrors.clientName = 'Client name is required';
+    
+    const hasValidItems = items.some(item => 
+      item.description.trim() && item.quantity > 0 && item.price > 0
+    );
+    if (!hasValidItems) newErrors.items = 'At least one valid item is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const quote = {
+        serviceType: quoteData.serviceType,
+        vehicleInfo: quoteData.vehicleInfo,
+        clientName: quoteData.clientName,
+        mechanicId: user.id,
+        mechanicName: user.name,
+        jobId: jobId,
+        items: items.filter(item => item.description.trim()),
+        subtotal: calculateSubtotal(),
+        tax: calculateTax(),
+        totalAmount: calculateTotal(),
+        validUntil: quoteData.validUntil,
+        notes: quoteData.notes,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      };
+
+      await createQuote(quote);
+      addNotification('Quote created successfully!');
+      navigation.goBack();
     } catch (error) {
-      console.error('Error loading job details:', error);
-      Alert.alert('Error', 'Failed to load job details');
+      Alert.alert('Error', 'Failed to create quote. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setQuoteForm(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-    
+  const updateQuoteData = (field, value) => {
+    setQuoteData({ ...quoteData, [field]: value });
     if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: null,
-      }));
+      setErrors({ ...errors, [field]: '' });
     }
   };
-
-  const handlePartChange = (index, field, value) => {
-    const updatedParts = [...quoteForm.parts];
-    updatedParts[index] = {
-      ...updatedParts[index],
-      [field]: value,
-    };
-    
-    // Calculate total for this part
-    if (field === 'quantity' || field === 'unitPrice') {
-      const quantity = parseFloat(updatedParts[index].quantity) || 0;
-      const unitPrice = parseFloat(updatedParts[index].unitPrice) || 0;
-      updatedParts[index].total = (quantity * unitPrice).toFixed(2);
-    }
-    
-    setQuoteForm(prev => ({
-      ...prev,
-      parts: updatedParts,
-    }));
-  };
-
-  const addPart = () => {
-    setQuoteForm(prev => ({
-      ...prev,
-      parts: [...prev.parts, { description: '', quantity: '1', unitPrice: '', total: '0' }],
-    }));
-  };
-
-  const removePart = (index) => {
-    if (quoteForm.parts.length > 1) {
-      setQuoteForm(prev => ({
-        ...prev,
-        parts: prev.parts.filter((_, i) => i !== index),
-      }));
-    }
-  };
-
-  const calculateQuoteTotal = () => {
-    const laborHours = parseFloat(quoteForm.laborHours) || 0;
-    const laborRate = parseFloat(quoteForm.laborRate) || 0;
-    const laborTotal = laborHours * laborRate;
-    
-    const partsTotal = quoteForm.parts.reduce((sum, part) => {
-      return sum + (parseFloat(part.total) || 0);
-    }, 0);
-    
-    const miscCharges = parseFloat(quoteForm.miscCharges) || 0;
-    const discount = parseFloat(quoteForm.discount) || 0;
-    
-    const subtotal = laborTotal + partsTotal + miscCharges;
-    const discountAmount = (subtotal * discount) / 100;
-    const afterDiscount = subtotal - discountAmount;
-    const vatAmount = afterDiscount * 0.15; // 15% VAT
-    const totalAmount = afterDiscount + vatAmount;
-    
-    return {
-      laborTotal,
-      partsTotal,
-      subtotal,
-      discountAmount,
-      vatAmount,
-      totalAmount,
-    };
-  };
-
-  const validateQuote = () => {
-    const newErrors = {};
-    
-    if (!quoteForm.laborHours || parseFloat(quoteForm.laborHours) <= 0) {
-      newErrors.laborHours = 'Labor hours is required and must be greater than 0';
-    }
-    
-    if (!quoteForm.laborRate || parseFloat(quoteForm.laborRate) <= 0) {
-      newErrors.laborRate = 'Labor rate is required and must be greater than 0';
-    }
-    
-    // Validate parts
-    quoteForm.parts.forEach((part, index) => {
-      if (part.description && (!part.unitPrice || parseFloat(part.unitPrice) <= 0)) {
-        newErrors[`part_${index}_unitPrice`] = 'Unit price is required for this part';
-      }
-    });
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmitQuote = async () => {
-    if (!validateQuote()) return;
-    
-    try {
-      setSubmitting(true);
-      
-      const totals = calculateQuoteTotal();
-      const quoteData = {
-        id: Date.now().toString(),
-        jobId: job.id,
-        laborHours: parseFloat(quoteForm.laborHours),
-        laborRate: parseFloat(quoteForm.laborRate),
-        laborTotal: totals.laborTotal,
-        parts: quoteForm.parts.filter(part => part.description).map(part => ({
-          description: part.description,
-          quantity: parseFloat(part.quantity),
-          unitPrice: parseFloat(part.unitPrice),
-          total: parseFloat(part.total),
-        })),
-        partsTotal: totals.partsTotal,
-        miscCharges: parseFloat(quoteForm.miscCharges) || 0,
-        subtotal: totals.subtotal,
-        discount: parseFloat(quoteForm.discount) || 0,
-        discountAmount: totals.discountAmount,
-        vatAmount: totals.vatAmount,
-        totalAmount: totals.totalAmount,
-        notes: quoteForm.notes,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
-        status: 'SENT',
-      };
-      
-      // Update job with quote
-      const updatedJob = {
-        ...job,
-        status: SERVICE_STATUS.QUOTE_SENT,
-        quote: quoteData,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      updateServiceRequest(updatedJob);
-      
-      addNotification({
-        title: 'Quote Sent',
-        message: `Quote for ${job.serviceType} has been sent to ${job.client?.name}.`,
-        type: 'success',
-      });
-      
-      Alert.alert(
-        'Quote Sent',
-        `Quote of ${formatCurrency(totals.totalAmount)} has been sent to the client.`,
-        [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]
-      );
-    } catch (error) {
-      console.error('Error creating quote:', error);
-      Alert.alert('Error', 'Failed to create quote');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <LoadingSpinner message="Loading job details..." />
-      </SafeAreaView>
-    );
-  }
-
-  if (!job) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, theme.typography.h6]}>
-            Job not found
-          </Text>
-          <Button
-            title="Go Back"
-            onPress={() => navigation.goBack()}
-            style={styles.errorButton}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const totals = calculateQuoteTotal();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Job Information */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, theme.typography.h5]}>
-            Job Information
-          </Text>
+    <KeyboardAvoidingView style={globalStyles.formContainer} behavior="padding">
+      {/* Awesome Header */}
+      <View style={[
+        globalStyles.dashboardGradientHeader,
+        {
+          background: 'linear-gradient(135deg, #00B894 0%, #00A085 100%)',
+          backgroundColor: '#00B894',
+          paddingTop: 60,
+          paddingBottom: 30,
+        }
+      ]}>
+        <View style={globalStyles.dashboardHeaderContent}>
+          <View style={globalStyles.dashboardGreeting}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{ fontSize: 32, marginRight: 12 }}>💰</Text>
+              <Text style={[globalStyles.dashboardGreetingText, { fontSize: 26 }]}>
+                Create Quote
+              </Text>
+            </View>
+            <Text style={globalStyles.dashboardGreetingSubtext}>
+              Provide a detailed estimate for the service request
+            </Text>
+          </View>
           
-          <View style={styles.jobInfo}>
-            <Text style={[styles.jobTitle, theme.typography.h6]}>
-              {job.serviceType}
+          <TouchableOpacity
+            style={[globalStyles.dashboardProfileButton, {
+              backgroundColor: 'rgba(255,255,255,0.25)',
+            }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={[globalStyles.dashboardProfileIcon, { fontSize: 24 }]}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={globalStyles.formScrollContent}>
+        {/* Quote Information */}
+        <View style={globalStyles.createQuoteSection}>
+          <Text style={[globalStyles.createQuoteSectionTitle, { color: theme.colors.text }]}>
+            Quote Information
+          </Text>
+
+          <View style={globalStyles.inputContainer}>
+            <Text style={[globalStyles.inputLabel, { color: theme.colors.text }]}>
+              Service Type <Text style={globalStyles.inputRequired}>*</Text>
             </Text>
-            <Text style={[styles.jobVehicle, theme.typography.body2]}>
-              {job.vehicle ? 
-                `${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}` :
-                'Vehicle information not available'
-              }
+            <View style={[
+              globalStyles.inputFieldContainer,
+              errors.serviceType && globalStyles.inputFieldError
+            ]}>
+              <TextInput
+                style={[globalStyles.inputField, { color: theme.colors.text }]}
+                value={quoteData.serviceType}
+                onChangeText={(text) => updateQuoteData('serviceType', text)}
+                placeholder="Enter service type"
+                placeholderTextColor={theme.colors.placeholder}
+              />
+            </View>
+            {errors.serviceType && (
+              <Text style={globalStyles.inputErrorText}>{errors.serviceType}</Text>
+            )}
+          </View>
+
+          <View style={globalStyles.inputContainer}>
+            <Text style={[globalStyles.inputLabel, { color: theme.colors.text }]}>
+              Vehicle Information <Text style={globalStyles.inputRequired}>*</Text>
             </Text>
-            <Text style={[styles.jobClient, theme.typography.caption]}>
-              Client: {job.client?.name || 'Unknown'}
+            <View style={[
+              globalStyles.inputFieldContainer,
+              errors.vehicleInfo && globalStyles.inputFieldError
+            ]}>
+              <TextInput
+                style={[globalStyles.inputField, { color: theme.colors.text }]}
+                value={quoteData.vehicleInfo}
+                onChangeText={(text) => updateQuoteData('vehicleInfo', text)}
+                placeholder="e.g., 2020 Toyota Camry"
+                placeholderTextColor={theme.colors.placeholder}
+              />
+            </View>
+            {errors.vehicleInfo && (
+              <Text style={globalStyles.inputErrorText}>{errors.vehicleInfo}</Text>
+            )}
+          </View>
+
+          <View style={globalStyles.inputContainer}>
+            <Text style={[globalStyles.inputLabel, { color: theme.colors.text }]}>
+              Client Name <Text style={globalStyles.inputRequired}>*</Text>
             </Text>
+            <View style={[
+              globalStyles.inputFieldContainer,
+              errors.clientName && globalStyles.inputFieldError
+            ]}>
+              <TextInput
+                style={[globalStyles.inputField, { color: theme.colors.text }]}
+                value={quoteData.clientName}
+                onChangeText={(text) => updateQuoteData('clientName', text)}
+                placeholder="Enter client name"
+                placeholderTextColor={theme.colors.placeholder}
+              />
+            </View>
+            {errors.clientName && (
+              <Text style={globalStyles.inputErrorText}>{errors.clientName}</Text>
+            )}
+          </View>
+
+          <View style={globalStyles.inputContainer}>
+            <Text style={[globalStyles.inputLabel, { color: theme.colors.text }]}>
+              Valid Until
+            </Text>
+            <View style={globalStyles.inputFieldContainer}>
+              <TextInput
+                style={[globalStyles.inputField, { color: theme.colors.text }]}
+                value={quoteData.validUntil}
+                onChangeText={(text) => updateQuoteData('validUntil', text)}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={theme.colors.placeholder}
+              />
+            </View>
           </View>
         </View>
 
-        {/* Labor Section */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, theme.typography.h5]}>
-            Labor
+        {/* Quote Items */}
+        <View style={globalStyles.createQuoteSection}>
+          <Text style={[globalStyles.createQuoteSectionTitle, { color: theme.colors.text }]}>
+            Quote Items
           </Text>
-          
-          <View style={styles.laborRow}>
-            <Input
-              label="Hours *"
-              value={quoteForm.laborHours}
-              onChangeText={(value) => handleInputChange('laborHours', value)}
-              placeholder="0.0"
-              keyboardType="numeric"
-              error={errors.laborHours}
-              style={styles.laborInput}
-            />
-            
-            <Input
-              label="Rate (R/hour) *"
-              value={quoteForm.laborRate}
-              onChangeText={(value) => handleInputChange('laborRate', value)}
-              placeholder="450"
-              keyboardType="numeric"
-              error={errors.laborRate}
-              style={styles.laborInput}
-            />
-          </View>
-          
-          <Text style={[styles.laborTotal, theme.typography.h6]}>
-            Labor Total: {formatCurrency(totals.laborTotal)}
-          </Text>
-        </View>
 
-        {/* Parts Section */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, theme.typography.h5]}>
-              Parts & Materials
-            </Text>
-            <TouchableOpacity onPress={addPart}>
-              <Text style={[styles.addButton, { color: theme.colors.primary }]}>
-                + Add Part
+          <View style={globalStyles.createQuoteItemsContainer}>
+            {/* Header Row */}
+            <View style={[globalStyles.createQuoteItem, { paddingVertical: 8, backgroundColor: theme.colors.surface }]}>
+              <View style={globalStyles.createQuoteItemDescription}>
+                <Text style={[theme.typography.labelSmall, { color: theme.colors.textSecondary }]}>
+                  Description
+                </Text>
+              </View>
+              <View style={{ width: 60, alignItems: 'center' }}>
+                <Text style={[theme.typography.labelSmall, { color: theme.colors.textSecondary }]}>
+                  Qty
+                </Text>
+              </View>
+              <View style={{ width: 80, alignItems: 'center' }}>
+                <Text style={[theme.typography.labelSmall, { color: theme.colors.textSecondary }]}>
+                  Price
+                </Text>
+              </View>
+              <View style={globalStyles.createQuoteItemTotal}>
+                <Text style={[theme.typography.labelSmall, { color: theme.colors.textSecondary }]}>
+                  Total
+                </Text>
+              </View>
+            </View>
+
+            {/* Quote Items */}
+            {items.map((item) => (
+              <View key={item.id} style={globalStyles.createQuoteItem}>
+                <View style={globalStyles.createQuoteItemDescription}>
+                  <TextInput
+                    style={[
+                      globalStyles.createQuoteItemDescriptionInput,
+                      { color: theme.colors.text, borderColor: theme.colors.border }
+                    ]}
+                    value={item.description}
+                    onChangeText={(text) => updateItem(item.id, 'description', text)}
+                    placeholder="Item description..."
+                    placeholderTextColor={theme.colors.placeholder}
+                  />
+                </View>
+                
+                <View style={globalStyles.createQuoteItemQuantity}>
+                  <TextInput
+                    style={[
+                      globalStyles.createQuoteItemQuantityInput,
+                      { color: theme.colors.text, borderColor: theme.colors.border }
+                    ]}
+                    value={item.quantity.toString()}
+                    onChangeText={(text) => updateItem(item.id, 'quantity', parseInt(text) || 0)}
+                    keyboardType="numeric"
+                    placeholder="1"
+                    placeholderTextColor={theme.colors.placeholder}
+                  />
+                </View>
+                
+                <View style={globalStyles.createQuoteItemPrice}>
+                  <TextInput
+                    style={[
+                      globalStyles.createQuoteItemPriceInput,
+                      { color: theme.colors.text, borderColor: theme.colors.border }
+                    ]}
+                    value={item.price.toString()}
+                    onChangeText={(text) => updateItem(item.id, 'price', parseFloat(text) || 0)}
+                    keyboardType="numeric"
+                    placeholder="0.00"
+                    placeholderTextColor={theme.colors.placeholder}
+                  />
+                </View>
+                
+                <View style={globalStyles.createQuoteItemTotal}>
+                  <Text style={[globalStyles.createQuoteItemTotalText, { color: theme.colors.text }]}>
+                    ${item.total.toFixed(2)}
+                  </Text>
+                </View>
+                
+                {items.length > 1 && (
+                  <TouchableOpacity
+                    style={globalStyles.createQuoteItemRemove}
+                    onPress={() => removeItem(item.id)}
+                  >
+                    <Text style={[globalStyles.createQuoteItemRemoveIcon, { color: theme.colors.error }]}>
+                      ✕
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+
+            {/* Add Item Button */}
+            <TouchableOpacity
+              style={[globalStyles.createQuoteAddItem, { borderColor: theme.colors.border }]}
+              onPress={addItem}
+            >
+              <Text style={[globalStyles.createQuoteAddItemIcon, { color: theme.colors.primary }]}>
+                ➕
+              </Text>
+              <Text style={[globalStyles.createQuoteAddItemText, { color: theme.colors.primary }]}>
+                Add Item
               </Text>
             </TouchableOpacity>
           </View>
-          
-          {quoteForm.parts.map((part, index) => (
-            <View key={index} style={styles.partContainer}>
-              <Input
-                label="Description"
-                value={part.description}
-                onChangeText={(value) => handlePartChange(index, 'description', value)}
-                placeholder="Part name"
-                style={styles.partDescInput}
-              />
-              
-              <View style={styles.partRow}>
-                <Input
-                  label="Qty"
-                  value={part.quantity}
-                  onChangeText={(value) => handlePartChange(index, 'quantity', value)}
-                  placeholder="1"
-                  keyboardType="numeric"
-                  style={styles.partQtyInput}
-                />
-                
-                <Input
-                  label="Unit Price"
-                  value={part.unitPrice}
-                  onChangeText={(value) => handlePartChange(index, 'unitPrice', value)}
-                  placeholder="0.00"
-                  keyboardType="numeric"
-                  style={styles.partPriceInput}
-                  error={errors[`part_${index}_unitPrice`]}
-                />
-                
-                <View style={styles.partTotalContainer}>
-                  <Text style={[styles.partTotalLabel, theme.typography.caption]}>Total</Text>
-                  <Text style={[styles.partTotalValue, theme.typography.h6]}>
-                    R {part.total}
-                  </Text>
-                </View>
-              </View>
-              
-              {quoteForm.parts.length > 1 && (
-                <TouchableOpacity
-                  style={styles.removePartButton}
-                  onPress={() => removePart(index)}
-                >
-                  <Text style={[styles.removePartText, { color: theme.colors.error }]}>
-                    Remove Part
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-          
-          <Text style={[styles.partsTotal, theme.typography.h6]}>
-            Parts Total: {formatCurrency(totals.partsTotal)}
-          </Text>
+
+          {errors.items && (
+            <Text style={globalStyles.inputErrorText}>{errors.items}</Text>
+          )}
         </View>
 
-        {/* Additional Charges */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, theme.typography.h5]}>
-            Additional
-          </Text>
-          
-          <Input
-            label="Miscellaneous Charges"
-            value={quoteForm.miscCharges}
-            onChangeText={(value) => handleInputChange('miscCharges', value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-          
-          <Input
-            label="Discount (%)"
-            value={quoteForm.discount}
-            onChangeText={(value) => handleInputChange('discount', value)}
-            placeholder="0"
-            keyboardType="numeric"
-          />
-        </View>
-
-        {/* Notes */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Input
-            label="Notes"
-            value={quoteForm.notes}
-            onChangeText={(value) => handleInputChange('notes', value)}
-            placeholder="Additional notes for the client..."
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-
-        {/* Quote Summary */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, theme.typography.h5]}>
-            Quote Summary
-          </Text>
-          
-          <View style={styles.summaryContainer}>
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, theme.typography.body2]}>Labor:</Text>
-              <Text style={[styles.summaryValue, theme.typography.body2]}>
-                {formatCurrency(totals.laborTotal)}
+        {/* Quote Total */}
+        <View style={globalStyles.createQuoteSection}>
+          <View style={globalStyles.createQuoteTotalSection}>
+            <View style={globalStyles.createQuoteTotalRow}>
+              <Text style={[globalStyles.createQuoteTotalLabel, { color: theme.colors.text }]}>
+                Subtotal:
+              </Text>
+              <Text style={[globalStyles.createQuoteTotalValue, { color: theme.colors.text }]}>
+                ${calculateSubtotal().toFixed(2)}
               </Text>
             </View>
             
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, theme.typography.body2]}>Parts:</Text>
-              <Text style={[styles.summaryValue, theme.typography.body2]}>
-                {formatCurrency(totals.partsTotal)}
+            <View style={globalStyles.createQuoteTotalRow}>
+              <Text style={[globalStyles.createQuoteTotalLabel, { color: theme.colors.text }]}>
+                Tax (8%):
+              </Text>
+              <Text style={[globalStyles.createQuoteTotalValue, { color: theme.colors.text }]}>
+                ${calculateTax().toFixed(2)}
               </Text>
             </View>
             
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, theme.typography.body2]}>Misc Charges:</Text>
-              <Text style={[styles.summaryValue, theme.typography.body2]}>
-                {formatCurrency(parseFloat(quoteForm.miscCharges) || 0)}
+            <View style={[globalStyles.createQuoteTotalRow, globalStyles.createQuoteTotalRowLast]}>
+              <Text style={[globalStyles.createQuoteTotalLabel, { color: theme.colors.primary }]}>
+                Total:
               </Text>
-            </View>
-            
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, theme.typography.body2]}>Subtotal:</Text>
-              <Text style={[styles.summaryValue, theme.typography.body2]}>
-                {formatCurrency(totals.subtotal)}
-              </Text>
-            </View>
-            
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, theme.typography.body2]}>Discount:</Text>
-              <Text style={[styles.summaryValue, theme.typography.body2, { color: theme.colors.success }]}>
-                -{formatCurrency(totals.discountAmount)}
-              </Text>
-            </View>
-            
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, theme.typography.body2]}>VAT (15%):</Text>
-              <Text style={[styles.summaryValue, theme.typography.body2]}>
-                {formatCurrency(totals.vatAmount)}
-              </Text>
-            </View>
-            
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={[styles.totalLabel, theme.typography.h5]}>Total:</Text>
-              <Text style={[styles.totalValue, theme.typography.h5]}>
-                {formatCurrency(totals.totalAmount)}
+              <Text style={[globalStyles.createQuoteTotalGrandTotal, { color: theme.colors.primary }]}>
+                ${calculateTotal().toFixed(2)}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Submit Button */}
-        <Button
-          title="Send Quote"
-          onPress={handleSubmitQuote}
-          loading={submitting}
-          disabled={submitting}
-          style={styles.submitButton}
-        />
+        {/* Additional Notes */}
+        <View style={globalStyles.createQuoteSection}>
+          <Text style={[globalStyles.createQuoteSectionTitle, { color: theme.colors.text }]}>
+            Additional Notes (Optional)
+          </Text>
+
+          <View style={[globalStyles.inputFieldContainer, { minHeight: 80, alignItems: 'flex-start' }]}>
+            <TextInput
+              style={[
+                globalStyles.inputField,
+                globalStyles.inputFieldMultiline,
+                { color: theme.colors.text, minHeight: 60 }
+              ]}
+              value={quoteData.notes}
+              onChangeText={(text) => updateQuoteData('notes', text)}
+              placeholder="Any additional notes, terms, or conditions..."
+              placeholderTextColor={theme.colors.placeholder}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Submit Button */}
+      <View style={{ padding: 20, paddingTop: 0 }}>
+        <TouchableOpacity
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.createQuoteSubmitButton,
+            loading && globalStyles.buttonDisabled,
+            { marginTop: 0 }
+          ]}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={globalStyles.buttonText}>
+            {loading ? 'Creating Quote...' : 'Create Quote'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  section: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  sectionTitle: {
-    marginBottom: 12,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  addButton: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  jobInfo: {
-    gap: 4,
-  },
-  jobTitle: {
-    marginBottom: 4,
-  },
-  jobVehicle: {
-    opacity: 0.8,
-    marginBottom: 4,
-  },
-  jobClient: {
-    opacity: 0.6,
-  },
-  laborRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  laborInput: {
-    flex: 1,
-  },
-  laborTotal: {
-    textAlign: 'right',
-    marginTop: 8,
-    color: '#4CAF50',
-  },
-  partContainer: {
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#F8F9FA',
-  },
-  partDescInput: {
-    marginBottom: 12,
-  },
-  partRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  partQtyInput: {
-    flex: 1,
-  },
-  partPriceInput: {
-    flex: 2,
-  },
-  partTotalContainer: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  partTotalLabel: {
-    marginBottom: 4,
-  },
-  partTotalValue: {
-    color: '#4CAF50',
-  },
-  removePartButton: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-  },
-  removePartText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  partsTotal: {
-    textAlign: 'right',
-    marginTop: 8,
-    color: '#4CAF50',
-  },
-  summaryContainer: {
-    gap: 8,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  summaryLabel: {
-    flex: 1,
-  },
-  summaryValue: {
-    fontWeight: '500',
-  },
-  totalRow: {
-    borderTopWidth: 2,
-    borderTopColor: '#007AFF',
-    paddingTop: 8,
-    marginTop: 8,
-  },
-  totalLabel: {
-    flex: 1,
-    color: '#007AFF',
-  },
-  totalValue: {
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
-  submitButton: {
-    marginHorizontal: 20,
-    marginTop: 24,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  errorButton: {
-    paddingHorizontal: 24,
-  },
-});
-
-export default CreateQuote;
+export default {
+  JobDetails,
+  QuoteDetails,
+  CreateQuote,
+};

@@ -1,724 +1,485 @@
+// =============================================================================
+// src/screens/admin/UserManagement.js - User Management Screen
+// =============================================================================
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Alert,
-  TextInput,
-  Modal,
   FlatList,
+  TextInput,
+  RefreshControl,
+  Alert,
 } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
-import { useApp } from '../../context/AppContext';
-import { useTheme } from '../../context/ThemeContext';
-import Button from '../../components/common/Button';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const UserManagement = ({ navigation }) => {
   const { user: currentUser } = useAuth();
-  const { users, setUsers, isLoading, setLoading, addNotification } = useApp();
+  const { users, updateUser, deleteUser, addNotification } = useApp();
   const { theme } = useTheme();
-  
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const globalStyles = useGlobalStyles();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState('ALL');
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [modalMode, setModalMode] = useState('view'); // 'view', 'edit', 'create'
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('all');
 
-  const [userForm, setUserForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    role: 'CLIENT',
-    isActive: true,
-  });
+  const filters = [
+    { id: 'all', label: 'All Users', count: users?.length || 0 },
+    { id: 'client', label: 'Clients', count: users?.filter(u => u.role === 'client').length || 0 },
+    { id: 'mechanic', label: 'Mechanics', count: users?.filter(u => u.role === 'mechanic').length || 0 },
+    { id: 'admin', label: 'Admins', count: users?.filter(u => u.role === 'admin').length || 0 },
+    { id: 'active', label: 'Active', count: users?.filter(u => u.status === 'active').length || 0 },
+    { id: 'inactive', label: 'Inactive', count: users?.filter(u => u.status === 'inactive').length || 0 },
+  ];
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  const filteredUsers = users?.filter(user => {
+    const matchesSearch = user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    let matchesFilter = false;
+    switch (selectedFilter) {
+      case 'all':
+        matchesFilter = true;
+        break;
+      case 'active':
+        matchesFilter = user.status === 'active';
+        break;
+      case 'inactive':
+        matchesFilter = user.status === 'inactive';
+        break;
+      default:
+        matchesFilter = user.role === selectedFilter;
+    }
+    
+    return matchesSearch && matchesFilter;
+  }) || [];
 
-  useEffect(() => {
-    filterUsers();
-  }, [users, searchQuery, selectedRole]);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Refresh users data
+    setRefreshing(false);
+  };
 
-  const loadUsers = async () => {
+  const handleUserAction = (action, userData) => {
+    switch (action) {
+      case 'edit':
+        navigation.navigate('EditUser', { userId: userData.id });
+        break;
+      case 'activate':
+        updateUserStatus(userData.id, 'active');
+        break;
+      case 'deactivate':
+        updateUserStatus(userData.id, 'inactive');
+        break;
+      case 'delete':
+        confirmDeleteUser(userData);
+        break;
+      case 'viewDetails':
+        navigation.navigate('UserDetails', { userId: userData.id });
+        break;
+    }
+  };
+
+  const updateUserStatus = async (userId, status) => {
     try {
-      setLoading(true);
-      // Mock data - replace with actual API call
-      // const allUsers = await userService.getAllUsers();
-      // setUsers(allUsers);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      Alert.alert('Error', 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterUsers = () => {
-    let filtered = users;
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user => 
-        user.firstName.toLowerCase().includes(query) ||
-        user.lastName.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query) ||
-        user.phoneNumber?.includes(query)
-      );
-    }
-
-    // Filter by role
-    if (selectedRole !== 'ALL') {
-      filtered = filtered.filter(user => user.role === selectedRole);
-    }
-
-    setFilteredUsers(filtered);
-  };
-
-  const handleCreateUser = () => {
-    setUserForm({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phoneNumber: '',
-      role: 'CLIENT',
-      isActive: true,
-    });
-    setSelectedUser(null);
-    setModalMode('create');
-    setShowUserModal(true);
-  };
-
-  const handleViewUser = (user) => {
-    setSelectedUser(user);
-    setUserForm(user);
-    setModalMode('view');
-    setShowUserModal(true);
-  };
-
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setUserForm(user);
-    setModalMode('edit');
-    setShowUserModal(true);
-  };
-
-  const handleDeleteUser = (user) => {
-    Alert.alert(
-      'Delete User',
-      `Are you sure you want to delete ${user.firstName} ${user.lastName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // API call to delete user
-              // await userService.deleteUser(user.id);
-              
-              // Update local state
-              setUsers(users.filter(u => u.id !== user.id));
-              
-              addNotification({
-                title: 'User Deleted',
-                message: `${user.firstName} ${user.lastName} has been deleted.`,
-                type: 'success',
-              });
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete user');
-            }
-          }
-        },
-      ]
-    );
-  };
-
-  const handleToggleUserStatus = async (user) => {
-    try {
-      const newStatus = !user.isActive;
-      const action = newStatus ? 'activate' : 'deactivate';
-      
-      Alert.alert(
-        `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
-        `Are you sure you want to ${action} ${user.firstName} ${user.lastName}?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: action.charAt(0).toUpperCase() + action.slice(1),
-            onPress: async () => {
-              try {
-                // API call to toggle user status
-                // await userService.updateUserStatus(user.id, newStatus);
-                
-                // Update local state
-                const updatedUsers = users.map(u => 
-                  u.id === user.id ? { ...u, isActive: newStatus } : u
-                );
-                setUsers(updatedUsers);
-                
-                addNotification({
-                  title: `User ${action.charAt(0).toUpperCase() + action.slice(1)}d`,
-                  message: `${user.firstName} ${user.lastName} has been ${action}d.`,
-                  type: 'success',
-                });
-              } catch (error) {
-                Alert.alert('Error', `Failed to ${action} user`);
-              }
-            }
-          },
-        ]
-      );
+      await updateUser(userId, { status });
+      addNotification(`User ${status === 'active' ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       Alert.alert('Error', 'Failed to update user status');
     }
   };
 
-  const handleSaveUser = async () => {
-    try {
-      // Validate form
-      if (!userForm.firstName || !userForm.lastName || !userForm.email) {
-        Alert.alert('Error', 'Please fill in all required fields');
-        return;
-      }
+  const confirmDeleteUser = (userData) => {
+    Alert.alert(
+      'Delete User',
+      `Are you sure you want to delete ${userData.name}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteUser(userData.id);
+              addNotification('User deleted successfully');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete user');
+            }
+          },
+        },
+      ]
+    );
+  };
 
-      if (modalMode === 'create') {
-        // API call to create user
-        // const newUser = await userService.createUser(userForm);
-        
-        // Mock new user
-        const newUser = {
-          id: Date.now().toString(),
-          ...userForm,
-          createdAt: new Date().toISOString(),
-        };
-        
-        setUsers([...users, newUser]);
-        
-        addNotification({
-          title: 'User Created',
-          message: `${userForm.firstName} ${userForm.lastName} has been created.`,
-          type: 'success',
-        });
-      } else if (modalMode === 'edit') {
-        // API call to update user
-        // await userService.updateUser(selectedUser.id, userForm);
-        
-        // Update local state
-        const updatedUsers = users.map(u => 
-          u.id === selectedUser.id ? { ...u, ...userForm } : u
-        );
-        setUsers(updatedUsers);
-        
-        addNotification({
-          title: 'User Updated',
-          message: `${userForm.firstName} ${userForm.lastName} has been updated.`,
-          type: 'success',
-        });
-      }
+  const getRoleColor = (role) => {
+    const roleColors = {
+      client: theme.colors.primary,
+      mechanic: theme.colors.success,
+      admin: theme.colors.error,
+    };
+    return roleColors[role] || theme.colors.textSecondary;
+  };
 
-      setShowUserModal(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save user');
-    }
+  const getStatusColor = (status) => {
+    return status === 'active' ? theme.colors.success : theme.colors.textSecondary;
   };
 
   const renderUserCard = ({ item: user }) => (
-    <View style={[styles.userCard, { backgroundColor: theme.colors.surface }]}>
-      <View style={styles.userHeader}>
-        <View style={styles.userInfo}>
-          <Text style={[styles.userName, theme.typography.h6]}>
-            {user.firstName} {user.lastName}
-          </Text>
-          <Text style={[styles.userEmail, theme.typography.body2]}>
-            {user.email}
-          </Text>
-          <Text style={[styles.userPhone, theme.typography.caption]}>
-            {user.phoneNumber || 'No phone number'}
+    <View style={globalStyles.userListItem}>
+      {/* User Header */}
+      <View style={globalStyles.userListItemHeader}>
+        <View style={[
+          globalStyles.userListItemAvatar,
+          { backgroundColor: getRoleColor(user.role) }
+        ]}>
+          <Text style={globalStyles.userListItemAvatarText}>
+            {user.name?.charAt(0).toUpperCase() || '?'}
           </Text>
         </View>
         
-        <View style={styles.userBadges}>
+        <View style={globalStyles.userListItemInfo}>
+          <Text style={[globalStyles.userListItemName, { color: theme.colors.text }]}>
+            {user.name || 'Unknown User'}
+          </Text>
+          <Text style={[globalStyles.userListItemEmail, { color: theme.colors.textSecondary }]}>
+            {user.email || 'No email'}
+          </Text>
+        </View>
+        
+        <View style={{ alignItems: 'flex-end', gap: 8 }}>
           <View style={[
-            styles.roleBadge, 
+            globalStyles.userListItemRole,
             { backgroundColor: getRoleColor(user.role) }
           ]}>
-            <Text style={styles.roleBadgeText}>{user.role}</Text>
+            <Text style={globalStyles.userListItemRoleText}>{user.role}</Text>
           </View>
           
           <View style={[
-            styles.statusBadge,
-            { backgroundColor: user.isActive ? theme.colors.success : theme.colors.error }
+            globalStyles.statusBadge,
+            globalStyles.statusBadgeSmall,
+            { backgroundColor: getStatusColor(user.status) }
           ]}>
-            <Text style={styles.statusBadgeText}>
-              {user.isActive ? 'Active' : 'Inactive'}
+            <Text style={[globalStyles.statusBadgeText, globalStyles.statusBadgeTextSmall]}>
+              {user.status || 'active'}
             </Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.userActions}>
+      {/* User Stats */}
+      <View style={globalStyles.userListItemStats}>
+        <View style={globalStyles.userListItemStat}>
+          <Text style={[globalStyles.userListItemStatValue, { color: theme.colors.text }]}>
+            {user.role === 'client' ? (user.vehicleCount || 0) : 
+             user.role === 'mechanic' ? (user.jobsCompleted || 0) : 
+             (user.actionsPerformed || 0)}
+          </Text>
+          <Text style={globalStyles.userListItemStatLabel}>
+            {user.role === 'client' ? 'Vehicles' : 
+             user.role === 'mechanic' ? 'Jobs Done' : 
+             'Actions'}
+          </Text>
+        </View>
+        
+        <View style={globalStyles.userListItemStat}>
+          <Text style={[globalStyles.userListItemStatValue, { color: theme.colors.text }]}>
+            {user.role === 'client' ? (user.serviceCount || 0) : 
+             user.role === 'mechanic' ? (user.activeJobs || 0) : 
+             (user.usersManaged || 0)}
+          </Text>
+          <Text style={globalStyles.userListItemStatLabel}>
+            {user.role === 'client' ? 'Services' : 
+             user.role === 'mechanic' ? 'Active' : 
+             'Managed'}
+          </Text>
+        </View>
+        
+        <View style={globalStyles.userListItemStat}>
+          <Text style={[globalStyles.userListItemStatValue, { color: theme.colors.text }]}>
+            {user.lastActive ? 
+              Math.floor((Date.now() - new Date(user.lastActive)) / (1000 * 60 * 60 * 24)) : 
+              '?'}
+          </Text>
+          <Text style={globalStyles.userListItemStatLabel}>
+            Days Ago
+          </Text>
+        </View>
+      </View>
+
+      {/* User Actions */}
+      <View style={{
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.borderLight,
+      }}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
-          onPress={() => handleViewUser(user)}
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.buttonSmall,
+            { backgroundColor: theme.colors.primary, flex: 1 }
+          ]}
+          onPress={() => handleUserAction('viewDetails', user)}
         >
-          <Text style={styles.actionButtonText}>View</Text>
+          <Text style={globalStyles.buttonText}>View</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
-          onPress={() => handleEditUser(user)}
+          style={[
+            globalStyles.buttonBase,
+            globalStyles.buttonSecondary,
+            globalStyles.buttonSmall,
+            { flex: 1 }
+          ]}
+          onPress={() => handleUserAction('edit', user)}
         >
-          <Text style={styles.actionButtonText}>Edit</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.actionButton, { 
-            backgroundColor: user.isActive ? theme.colors.warning : theme.colors.success 
-          }]}
-          onPress={() => handleToggleUserStatus(user)}
-        >
-          <Text style={styles.actionButtonText}>
-            {user.isActive ? 'Deactivate' : 'Activate'}
+          <Text style={[globalStyles.buttonText, globalStyles.buttonTextSecondary]}>
+            Edit
           </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.colors.error }]}
-          onPress={() => handleDeleteUser(user)}
-        >
-          <Text style={styles.actionButtonText}>Delete</Text>
-        </TouchableOpacity>
+        {user.status === 'active' ? (
+          <TouchableOpacity
+            style={[
+              globalStyles.buttonBase,
+              globalStyles.buttonSmall,
+              { backgroundColor: theme.colors.warning, paddingHorizontal: 12 }
+            ]}
+            onPress={() => handleUserAction('deactivate', user)}
+          >
+            <Text style={globalStyles.buttonText}>⏸️</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[
+              globalStyles.buttonBase,
+              globalStyles.buttonSmall,
+              { backgroundColor: theme.colors.success, paddingHorizontal: 12 }
+            ]}
+            onPress={() => handleUserAction('activate', user)}
+          >
+            <Text style={globalStyles.buttonText}>▶️</Text>
+          </TouchableOpacity>
+        )}
+        
+        {user.id !== currentUser.id && (
+          <TouchableOpacity
+            style={[
+              globalStyles.buttonBase,
+              globalStyles.buttonDanger,
+              globalStyles.buttonSmall,
+              { paddingHorizontal: 12 }
+            ]}
+            onPress={() => handleUserAction('delete', user)}
+          >
+            <Text style={globalStyles.buttonText}>🗑️</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'ADMIN': return theme.colors.error;
-      case 'MECHANIC': return theme.colors.warning;
-      case 'CLIENT': return theme.colors.primary;
-      default: return theme.colors.secondary;
-    }
-  };
-
-  const renderUserModal = () => (
-    <Modal
-      visible={showUserModal}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
-      <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.modalHeader}>
-          <Text style={[styles.modalTitle, theme.typography.h4]}>
-            {modalMode === 'create' ? 'Create User' : 
-             modalMode === 'edit' ? 'Edit User' : 'User Details'}
+  return (
+    <View style={globalStyles.userManagementContainer}>
+      {/* Awesome Header */}
+      <View style={[
+        globalStyles.dashboardGradientHeader,
+        {
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundColor: '#667eea',
+          paddingTop: 60,
+          paddingBottom: 30,
+          position: 'relative',
+          overflow: 'hidden',
+        }
+      ]}>
+        {/* Background Pattern */}
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: 0.1,
+        }}>
+          <Text style={{
+            fontSize: 120,
+            color: '#fff',
+            position: 'absolute',
+            top: -20,
+            right: -30,
+            transform: [{ rotate: '15deg' }],
+          }}>
+            👥
           </Text>
-          <TouchableOpacity onPress={() => setShowUserModal(false)}>
-            <Text style={[styles.modalClose, { color: theme.colors.primary }]}>
-              {modalMode === 'view' ? 'Close' : 'Cancel'}
+          <Text style={{
+            fontSize: 80,
+            color: '#fff',
+            position: 'absolute',
+            bottom: -10,
+            left: -20,
+            transform: [{ rotate: '-15deg' }],
+          }}>
+            👤
+          </Text>
+          <Text style={{
+            fontSize: 60,
+            color: '#fff',
+            position: 'absolute',
+            top: 30,
+            left: '40%',
+            transform: [{ rotate: '30deg' }],
+          }}>
+            🛡️
+          </Text>
+        </View>
+
+        <View style={globalStyles.dashboardHeaderContent}>
+          <View style={globalStyles.dashboardGreeting}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{ fontSize: 32, marginRight: 12 }}>👥</Text>
+              <Text style={[globalStyles.dashboardGreetingText, { fontSize: 28 }]}>
+                User Management
+              </Text>
+            </View>
+            <Text style={globalStyles.dashboardGreetingSubtext}>
+              Manage users, roles, and permissions across the platform
             </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[globalStyles.dashboardProfileButton, {
+              backgroundColor: 'rgba(255,255,255,0.25)',
+              borderWidth: 2,
+              borderColor: 'rgba(255,255,255,0.3)',
+            }]}
+            onPress={() => navigation.navigate('CreateUser')}
+          >
+            <Text style={[globalStyles.dashboardProfileIcon, { fontSize: 28 }]}>➕</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.modalContent}>
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, theme.typography.body2]}>First Name *</Text>
-            <TextInput
-              style={[styles.formInput, { 
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-              }]}
-              value={userForm.firstName}
-              onChangeText={(text) => setUserForm(prev => ({ ...prev, firstName: text }))}
-              placeholder="Enter first name"
-              editable={modalMode !== 'view'}
-            />
+        {/* Header Stats */}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          marginTop: 20,
+          paddingHorizontal: 20,
+        }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>
+              {users?.length || 0}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+              Total Users
+            </Text>
           </View>
-
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, theme.typography.body2]}>Last Name *</Text>
-            <TextInput
-              style={[styles.formInput, { 
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-              }]}
-              value={userForm.lastName}
-              onChangeText={(text) => setUserForm(prev => ({ ...prev, lastName: text }))}
-              placeholder="Enter last name"
-              editable={modalMode !== 'view'}
-            />
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>
+              {users?.filter(u => u.status === 'active').length || 0}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+              Active
+            </Text>
           </View>
-
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, theme.typography.body2]}>Email *</Text>
-            <TextInput
-              style={[styles.formInput, { 
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-              }]}
-              value={userForm.email}
-              onChangeText={(text) => setUserForm(prev => ({ ...prev, email: text }))}
-              placeholder="Enter email address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={modalMode !== 'view'}
-            />
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>
+              {users?.filter(u => u.role === 'mechanic').length || 0}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+              Mechanics
+            </Text>
           </View>
-
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, theme.typography.body2]}>Phone Number</Text>
-            <TextInput
-              style={[styles.formInput, { 
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.text,
-              }]}
-              value={userForm.phoneNumber}
-              onChangeText={(text) => setUserForm(prev => ({ ...prev, phoneNumber: text }))}
-              placeholder="Enter phone number"
-              keyboardType="phone-pad"
-              editable={modalMode !== 'view'}
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, theme.typography.body2]}>Role *</Text>
-            <View style={styles.roleButtons}>
-              {['CLIENT', 'MECHANIC', 'ADMIN'].map((role) => (
-                <TouchableOpacity
-                  key={role}
-                  style={[
-                    styles.roleButton,
-                    userForm.role === role && { backgroundColor: theme.colors.primary },
-                    modalMode === 'view' && styles.disabledButton,
-                  ]}
-                  onPress={() => modalMode !== 'view' && setUserForm(prev => ({ ...prev, role }))}
-                  disabled={modalMode === 'view'}
-                >
-                  <Text
-                    style={[
-                      styles.roleButtonText,
-                      userForm.role === role && { color: '#fff' },
-                      { color: theme.colors.text },
-                    ]}
-                  >
-                    {role}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {selectedUser && (
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, theme.typography.body2]}>Created At</Text>
-              <Text style={[styles.formValue, theme.typography.body2]}>
-                {new Date(selectedUser.createdAt).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
-
-          {modalMode !== 'view' && (
-            <Button
-              title={modalMode === 'create' ? 'Create User' : 'Save Changes'}
-              onPress={handleSaveUser}
-              style={styles.saveButton}
-            />
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
-  );
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <LoadingSpinner message="Loading users..." />
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, theme.typography.h3]}>
-          User Management
-        </Text>
-        <Button
-          title="+ Add User"
-          onPress={handleCreateUser}
-          style={styles.addButton}
-        />
-      </View>
-
-      {/* Filters */}
-      <View style={styles.filters}>
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={[styles.searchInput, { 
-              backgroundColor: theme.colors.surface,
-              color: theme.colors.text,
-            }]}
-            placeholder="Search users..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
         </View>
+      </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.roleFilters}>
-          {['ALL', 'CLIENT', 'MECHANIC', 'ADMIN'].map((role) => (
-            <TouchableOpacity
-              key={role}
-              style={[
-                styles.roleFilter,
-                selectedRole === role && { backgroundColor: theme.colors.primary },
-              ]}
-              onPress={() => setSelectedRole(role)}
-            >
-              <Text
+      {/* Search Bar */}
+      <View style={[globalStyles.searchBarContainer, { marginTop: 16 }]}>
+        <Text style={globalStyles.searchIcon}>🔍</Text>
+        <TextInput
+          style={globalStyles.searchInput}
+          placeholder="Search users..."
+          placeholderTextColor={theme.colors.placeholder}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery ? (
+          <TouchableOpacity
+            style={globalStyles.searchClearButton}
+            onPress={() => setSearchQuery('')}
+          >
+            <Text style={globalStyles.searchClearIcon}>✕</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Filter Chips */}
+      <View style={globalStyles.userFiltersContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection: 'row', paddingHorizontal: 12, gap: 8 }}>
+            {filters.map((filter) => (
+              <TouchableOpacity
+                key={filter.id}
                 style={[
-                  styles.roleFilterText,
-                  selectedRole === role && { color: '#fff' },
-                  { color: theme.colors.text },
+                  globalStyles.userFilterChip,
+                  selectedFilter === filter.id && globalStyles.userFilterChipActive
                 ]}
+                onPress={() => setSelectedFilter(filter.id)}
               >
-                {role}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text style={[
+                  globalStyles.userFilterChipText,
+                  selectedFilter === filter.id && globalStyles.userFilterChipTextActive
+                ]}>
+                  {filter.label} ({filter.count})
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </ScrollView>
       </View>
 
-      {/* User Count */}
-      <View style={styles.userCount}>
-        <Text style={[styles.userCountText, theme.typography.body2]}>
-          {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
-        </Text>
-      </View>
-
-      {/* User List */}
+      {/* Users List */}
       <FlatList
         data={filteredUsers}
         renderItem={renderUserCard}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.userList}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyStateText, theme.typography.body1]}>
-              No users found
-            </Text>
-            <Text style={[styles.emptyStateSubtext, theme.typography.body2]}>
-              Try adjusting your search or filters
-            </Text>
-          </View>
+        style={globalStyles.userListContainer}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
         }
+        ListEmptyComponent={() => (
+          <View style={globalStyles.emptyState}>
+            <Text style={globalStyles.emptyStateIcon}>👥</Text>
+            <Text style={globalStyles.emptyStateTitle}>No Users Found</Text>
+            <Text style={globalStyles.emptyStateText}>
+              {searchQuery
+                ? 'No users match your search criteria.'
+                : 'No users found in this category.'
+              }
+            </Text>
+            <TouchableOpacity
+              style={[globalStyles.buttonBase, globalStyles.emptyStateButton]}
+              onPress={() => navigation.navigate('CreateUser')}
+            >
+              <Text style={globalStyles.buttonText}>Add User</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       />
-
-      {renderUserModal()}
-    </SafeAreaView>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  title: {
-    flex: 1,
-  },
-  addButton: {
-    paddingHorizontal: 16,
-  },
-  filters: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-  searchContainer: {
-    marginBottom: 12,
-  },
-  searchInput: {
-    height: 44,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  roleFilters: {
-    flexDirection: 'row',
-  },
-  roleFilter: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    marginRight: 8,
-  },
-  roleFilterText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  userCount: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  userCountText: {
-    opacity: 0.7,
-  },
-  userList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  userCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  userHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    marginBottom: 4,
-  },
-  userEmail: {
-    marginBottom: 2,
-    opacity: 0.8,
-  },
-  userPhone: {
-    opacity: 0.6,
-  },
-  userBadges: {
-    alignItems: 'flex-end',
-  },
-  roleBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  roleBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  userActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptyStateText: {
-    marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    opacity: 0.6,
-  },
-  modalContainer: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  modalTitle: {
-    flex: 1,
-  },
-  modalClose: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  formLabel: {
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  formInput: {
-    height: 44,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  formValue: {
-    opacity: 0.7,
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  roleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-  },
-  roleButtonText: {
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  saveButton: {
-    marginTop: 24,
-  },
-});
-
-export default UserManagement;
+export default {
+  SystemOverview,
+  UserManagement,
+};

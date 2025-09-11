@@ -1,390 +1,545 @@
-// src/screens/admin/AdminDashboard.js - Refactored version
+// src/screens/admin/AdminDashboard.js - Fully Refactored with Global Styles
 import React, { useState, useEffect } from 'react';
-import { ScrollView, RefreshControl, TouchableOpacity, View, Text, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Image,
+  Dimensions,
+} from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { useTheme, useGlobalStyles } from '../../context/ThemeContext';
-import { 
-  withScreenWrapper,
-  WelcomeHeader,
-  SectionContainer,
-  QuickActionsGrid,
-  MetricsGrid,
-  EmptyState
-} from '../../hoc/withScreenLayout';
-import ServiceCard from '../../components/cards/ServiceCard';
-import Button from '../../components/common/Button';
+import { getStatusColor, getPriorityColor } from '../../styles/globalStyles';
+
+const { width } = Dimensions.get('window');
 
 const AdminDashboard = ({ navigation }) => {
   const { user } = useAuth();
-  const { serviceRequests, users, isLoading, setLoading, addNotification } = useApp();
+  const { users, serviceRequests, vehicles, isLoading } = useApp();
   const { theme } = useTheme();
   const globalStyles = useGlobalStyles();
-  
+
   const [refreshing, setRefreshing] = useState(false);
-  const [dashboardData, setDashboardData] = useState({
+  const [systemStats, setSystemStats] = useState({
     totalUsers: 0,
+    totalClients: 0,
     totalMechanics: 0,
+    totalVehicles: 0,
     activeServices: 0,
-    totalRevenue: 0,
     pendingQuotes: 0,
     completedServices: 0,
-    todayServices: 0,
-    weeklyGrowth: 0,
+    systemHealth: 98,
+    monthlyRevenue: 0,
+    dailyActiveUsers: 0,
   });
+
+  // Quick actions for admin
+  const quickActions = [
+    {
+      title: 'User Management',
+      subtitle: 'Manage all users',
+      icon: '👥',
+      color: '#6C5CE7',
+      onPress: () => navigation.navigate('UserManagement'),
+    },
+    {
+      title: 'System Overview',
+      subtitle: 'Monitor system health',
+      icon: '📊',
+      color: '#00B894',
+      onPress: () => navigation.navigate('SystemOverview'),
+    },
+    {
+      title: 'Service Analytics',
+      subtitle: 'View detailed reports',
+      icon: '📈',
+      color: '#E17055',
+      onPress: () => navigation.navigate('ServiceAnalytics'),
+    },
+    {
+      title: 'Settings',
+      subtitle: 'System configuration',
+      icon: '⚙️',
+      color: '#636E72',
+      onPress: () => navigation.navigate('SystemSettings'),
+    },
+  ];
+
+  // System metrics
+  const systemMetrics = [
+    {
+      title: 'Total Users',
+      value: systemStats.totalUsers,
+      icon: '👤',
+      color: theme.colors.primary,
+      trend: `+${Math.floor(systemStats.totalUsers * 0.12)} this month`,
+      trendColor: theme.colors.success,
+      onPress: () => navigation.navigate('UserManagement'),
+    },
+    {
+      title: 'Active Services',
+      value: systemStats.activeServices,
+      icon: '🔧',
+      color: theme.colors.warning,
+      trend: 'In progress',
+      trendColor: theme.colors.warning,
+      onPress: () => navigation.navigate('ServiceOverview'),
+    },
+    {
+      title: 'System Health',
+      value: `${systemStats.systemHealth}%`,
+      icon: '💚',
+      color: theme.colors.success,
+      trend: 'All systems operational',
+      trendColor: theme.colors.success,
+      onPress: () => navigation.navigate('SystemHealth'),
+    },
+    {
+      title: 'Monthly Revenue',
+      value: `$${(systemStats.monthlyRevenue / 1000).toFixed(1)}k`,
+      icon: '💰',
+      color: '#6C5CE7',
+      trend: '+15% vs last month',
+      trendColor: theme.colors.success,
+      onPress: () => navigation.navigate('Revenue'),
+    },
+    {
+      title: 'Pending Quotes',
+      value: systemStats.pendingQuotes,
+      icon: '📋',
+      color: theme.colors.info,
+      trend: 'Awaiting approval',
+      trendColor: theme.colors.info,
+      onPress: () => navigation.navigate('QuoteManagement'),
+    },
+    {
+      title: 'Daily Active',
+      value: systemStats.dailyActiveUsers,
+      icon: '🎯',
+      color: '#E17055',
+      trend: '+8% vs yesterday',
+      trendColor: theme.colors.success,
+      onPress: () => navigation.navigate('UserActivity'),
+    },
+  ];
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
-  useEffect(() => {
-    calculateMetrics();
-  }, [serviceRequests, users]);
-
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      await Promise.all([
-        loadUsers(),
-        loadServiceRequests(),
-        loadSystemMetrics(),
-      ]);
+      // Calculate system statistics
+      const totalUsers = users?.length || 0;
+      const totalClients = users?.filter(u => u.role === 'client').length || 0;
+      const totalMechanics = users?.filter(u => u.role === 'mechanic').length || 0;
+      const activeServices = serviceRequests?.filter(s => s.status === 'in-progress').length || 0;
+      const pendingQuotes = serviceRequests?.filter(s => s.status === 'pending-quote').length || 0;
+      const completedServices = serviceRequests?.filter(s => s.status === 'completed').length || 0;
+
+      setSystemStats({
+        totalUsers,
+        totalClients,
+        totalMechanics,
+        totalVehicles: vehicles?.length || 0,
+        activeServices,
+        pendingQuotes,
+        completedServices,
+        systemHealth: 98,
+        monthlyRevenue: 45600,
+        dailyActiveUsers: Math.floor(totalUsers * 0.3),
+      });
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-      Alert.alert('Error', 'Failed to load dashboard data');
-    } finally {
-      setLoading(false);
+      console.error('Error loading admin dashboard data:', error);
     }
   };
 
-  const loadUsers = async () => {
-    // Mock data - replace with actual API call
-  };
-
-  const loadServiceRequests = async () => {
-    // Mock data - replace with actual API call
-  };
-
-  const loadSystemMetrics = async () => {
-    // Mock data - replace with actual API call
-  };
-
-  const calculateMetrics = () => {
-    const totalUsers = users.filter(u => u.role === 'CLIENT').length;
-    const totalMechanics = users.filter(u => u.role === 'MECHANIC').length;
-    const activeServices = serviceRequests.filter(req => 
-      ['CONFIRMED', 'IN_PROGRESS'].includes(req.status)
-    ).length;
-    const pendingQuotes = serviceRequests.filter(req => 
-      req.status === 'QUOTE_SENT'
-    ).length;
-    const completedServices = serviceRequests.filter(req => 
-      req.status === 'COMPLETED'
-    ).length;
-    
-    const today = new Date().toDateString();
-    const todayServices = serviceRequests.filter(req => 
-      new Date(req.preferredDate).toDateString() === today
-    ).length;
-    
-    const totalRevenue = serviceRequests
-      .filter(req => req.status === 'COMPLETED' && req.quote?.totalAmount)
-      .reduce((sum, req) => sum + req.quote.totalAmount, 0);
-
-    const weeklyGrowth = Math.round(Math.random() * 20 + 5);
-
-    setDashboardData({
-      totalUsers,
-      totalMechanics,
-      activeServices,
-      totalRevenue,
-      pendingQuotes,
-      completedServices,
-      todayServices,
-      weeklyGrowth,
-    });
-  };
-
-  const onRefresh = async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
   };
 
-  const handleServicePress = (service) => {
-    navigation.navigate('ServiceDetails', { serviceId: service.id });
-  };
-
-  const handleApproveService = (service) => {
-    Alert.alert(
-      'Approve Service',
-      `Approve the service request for ${service.serviceType}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Approve', 
-          onPress: async () => {
-            try {
-              addNotification({
-                title: 'Service Approved',
-                message: `Service request for ${service.serviceType} has been approved.`,
-                type: 'success',
-              });
-            } catch (error) {
-              Alert.alert('Error', 'Failed to approve service');
-            }
-          }
-        },
-      ]
-    );
-  };
-
-  // Get recent service requests that need admin attention
-  const pendingServices = serviceRequests
-    .filter(req => ['PENDING', 'QUOTE_SENT'].includes(req.status))
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
-
-  // Get urgent services
-  const urgentServices = serviceRequests
-    .filter(req => req.priority === 'URGENT' && req.status !== 'COMPLETED')
-    .slice(0, 3);
-
-  // Quick actions configuration
-  const quickActions = [
-    {
-      title: 'System Overview',
-      subtitle: 'View detailed metrics',
-      icon: '📊',
-      color: theme.colors.primary,
-      onPress: () => navigation.navigate('SystemOverview')
-    },
-    {
-      title: 'Manage Users',
-      subtitle: 'Add, edit, or remove users',
-      icon: '👥',
-      color: theme.colors.secondary,
-      onPress: () => navigation.navigate('UserManagement')
-    },
-    {
-      title: 'Reports',
-      subtitle: 'Generate insights',
-      icon: '📈',
-      color: theme.colors.success,
-      onPress: () => navigation.navigate('Reports')
-    },
-    {
-      title: 'Settings',
-      subtitle: 'Configure platform',
-      icon: '⚙️',
-      color: theme.colors.warning,
-      onPress: () => navigation.navigate('AdminSettings')
-    }
-  ];
-
-  // Key metrics configuration
-  const keyMetrics = [
-    {
-      title: 'Total Users',
-      value: dashboardData.totalUsers.toString(),
-      icon: '👥',
-      color: theme.colors.primary,
-      trend: `+${dashboardData.weeklyGrowth}% this week`,
-      size: 'medium',
-      onPress: () => navigation.navigate('UserManagement')
-    },
-    {
-      title: 'Active Mechanics',
-      value: dashboardData.totalMechanics.toString(),
-      icon: '🔧',
-      color: theme.colors.secondary,
-      trend: 'All available',
-      size: 'medium'
-    },
-    {
-      title: 'Active Services',
-      value: dashboardData.activeServices.toString(),
-      icon: '⚙️',
-      color: theme.colors.warning,
-      trend: dashboardData.activeServices > 0 ? "In progress" : "All caught up",
-      size: 'medium'
-    },
-    {
-      title: 'Total Revenue',
-      value: `R ${dashboardData.totalRevenue.toFixed(0)}`,
-      icon: '💰',
-      color: theme.colors.success,
-      trend: `+${Math.round(dashboardData.weeklyGrowth * 0.8)}% this month`,
-      size: 'medium'
-    }
-  ];
-
-  // Service overview metrics
-  const serviceMetrics = [
-    {
-      title: 'Pending Quotes',
-      value: dashboardData.pendingQuotes.toString(),
-      icon: '📋',
-      color: theme.colors.warning,
-      trend: dashboardData.pendingQuotes > 0 ? "Needs attention" : "All processed",
-      size: 'small'
-    },
-    {
-      title: 'Completed Today',
-      value: dashboardData.todayServices.toString(),
-      icon: '✅',
-      color: theme.colors.success,
-      trend: "Today's progress",
-      size: 'small'
-    },
-    {
-      title: 'Total Completed',
-      value: dashboardData.completedServices.toString(),
-      icon: '🎯',
-      color: theme.colors.info,
-      trend: "All time",
-      size: 'small'
-    }
-  ];
-
-  const renderSystemHealth = () => (
-    <SectionContainer title="System Health" background>
-      <View style={{ gap: 16 }}>
-        {[
-          { title: 'Database', status: 'Operational (99.9%)', color: theme.colors.success },
-          { title: 'API Response', status: '120ms (Excellent)', color: theme.colors.success },
-          { title: 'Storage', status: '78% used (Good)', color: theme.colors.warning },
-          { title: 'Active Users', status: `${dashboardData.totalUsers + dashboardData.totalMechanics} online`, color: theme.colors.info }
-        ].map((item, index) => (
-          <View key={index} style={[globalStyles.cardHeader, { alignItems: 'center' }]}>
-            <View 
-              style={{
-                width: 12, 
-                height: 12, 
-                borderRadius: 6, 
-                backgroundColor: item.color, 
-                marginRight: 16 
-              }} 
-            />
-            <Text style={[{ flex: 1, fontWeight: '600' }]}>{item.title}</Text>
-            <Text style={[globalStyles.opacity70, { fontSize: 12 }]}>{item.status}</Text>
-          </View>
-        ))}
-      </View>
-    </SectionContainer>
-  );
-
-  const renderUrgentServices = () => (
-    urgentServices.length > 0 ? (
-      <SectionContainer title={`🚨 Urgent Services (${urgentServices.length})`} background>
-        {urgentServices.map((service) => (
-          <View key={service.id} style={{ marginBottom: 12 }}>
-            <ServiceCard
-              service={service}
-              onPress={handleServicePress}
-              onApprove={handleApproveService}
-              userRole="ADMIN"
-              showAdminActions={true}
-            />
-          </View>
-        ))}
-      </SectionContainer>
-    ) : null
-  );
-
-  const renderPendingServices = () => (
-    <SectionContainer 
-      title={`Pending Services (${pendingServices.length})`}
-    >
-      {serviceRequests.length > 5 && (
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('ServiceRequests')} 
-          style={{ alignSelf: 'flex-end', marginBottom: 16 }}
-        >
-          <Text style={[{ color: theme.colors.primary, fontWeight: '600', fontSize: 14 }]}>
-            View All ({serviceRequests.length})
-          </Text>
-        </TouchableOpacity>
-      )}
-      
-      {pendingServices.length > 0 ? (
-        pendingServices.map((service, index) => (
-          <View key={service.id} style={index < pendingServices.length - 1 ? { marginBottom: 16 } : {}}>
-            <ServiceCard
-              service={service}
-              onPress={handleServicePress}
-              onApprove={handleApproveService}
-              userRole="ADMIN"
-              showAdminActions={true}
-            />
-          </View>
-        ))
-      ) : (
-        <EmptyState
-          icon="✅"
-          title="All caught up!"
-          subtitle="No pending services require your attention"
-        />
-      )}
-    </SectionContainer>
-  );
+  // Recent user activity
+  const recentUsers = users?.slice(0, 5) || [];
 
   return (
     <ScrollView
-      style={globalStyles.scrollView}
-      contentContainerStyle={globalStyles.scrollContent}
+      style={globalStyles.dashboardContainer}
+      contentContainerStyle={globalStyles.screenScrollContent}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={[theme.colors.primary]}
+          tintColor={theme.colors.primary}
+        />
       }
-      showsVerticalScrollIndicator={false}
     >
-      {/* Welcome Header */}
-      <WelcomeHeader
-        user={user}
-        subtitle="Here's what's happening with your platform"
-        rightWidget={
-          <View style={{ alignItems: 'center' }}>
-            <Text style={[globalStyles.greeting, { color: '#fff', fontSize: 28, marginBottom: 4 }]}>
-              {dashboardData.todayServices}
+      {/* Awesome Header Section */}
+      <View style={[
+        globalStyles.dashboardGradientHeader,
+        {
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundColor: '#667eea',
+          paddingTop: 60,
+          paddingBottom: 40,
+          position: 'relative',
+          overflow: 'hidden',
+        }
+      ]}>
+        {/* Background Pattern */}
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: 0.1,
+        }}>
+          <Text style={{
+            fontSize: 120,
+            color: '#fff',
+            position: 'absolute',
+            top: -20,
+            right: -30,
+            transform: [{ rotate: '15deg' }],
+          }}>
+            👑
+          </Text>
+          <Text style={{
+            fontSize: 80,
+            color: '#fff',
+            position: 'absolute',
+            bottom: -10,
+            left: -20,
+            transform: [{ rotate: '-15deg' }],
+          }}>
+            📊
+          </Text>
+        </View>
+
+        <View style={globalStyles.dashboardHeaderContent}>
+          <View style={globalStyles.dashboardGreeting}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{
+                fontSize: 32,
+                marginRight: 12,
+              }}>👑</Text>
+              <Text style={[globalStyles.dashboardGreetingText, { fontSize: 28 }]}>
+                Admin Dashboard
+              </Text>
+            </View>
+            <Text style={globalStyles.dashboardGreetingSubtext}>
+              Welcome back, {user?.name}! Monitor and manage your auto service platform
             </Text>
-            <Text style={[globalStyles.subGreeting, { fontSize: 12 }]}>
-              Today's Services
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginTop: 12,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 20,
+              alignSelf: 'flex-start',
+            }}>
+              <Text style={{ color: '#fff', fontSize: 12, marginRight: 6 }}>🟢</Text>
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                System Status: Operational
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[globalStyles.dashboardProfileButton, {
+              backgroundColor: 'rgba(255,255,255,0.25)',
+              borderWidth: 2,
+              borderColor: 'rgba(255,255,255,0.3)',
+            }]}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Text style={[globalStyles.dashboardProfileIcon, { fontSize: 28 }]}>👤</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Header Stats Row */}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          marginTop: 24,
+          paddingHorizontal: 20,
+        }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
+              {systemStats.totalUsers}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+              Total Users
             </Text>
           </View>
-        }
-      />
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
+              {systemStats.activeServices}
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+              Active Services
+            </Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
+              {systemStats.systemHealth}%
+            </Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+              System Health
+            </Text>
+          </View>
+        </View>
+      </View>
 
       {/* Quick Actions */}
-      <QuickActionsGrid 
-        actions={quickActions}
-        style={{ paddingTop: 32 }}
-      />
+      <View style={globalStyles.quickActionsContainer}>
+        <Text style={globalStyles.sectionTitle}>Administrative Tools</Text>
+        <View style={globalStyles.quickActions}>
+          {quickActions.map((action, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                globalStyles.quickActionCard,
+                {
+                  backgroundColor: action.color,
+                  minHeight: 120,
+                  shadowColor: action.color,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }
+              ]}
+              onPress={action.onPress}
+            >
+              <View style={[globalStyles.quickActionIcon, {
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                borderWidth: 2,
+                borderColor: 'rgba(255,255,255,0.3)',
+              }]}>
+                <Text style={[globalStyles.quickActionIconText, { fontSize: 28 }]}>
+                  {action.icon}
+                </Text>
+              </View>
+              <Text style={[globalStyles.quickActionTitle, { color: '#fff', fontSize: 15 }]}>
+                {action.title}
+              </Text>
+              <Text style={[globalStyles.quickActionSubtitle, { color: 'rgba(255,255,255,0.9)' }]}>
+                {action.subtitle}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
-      {/* Key Metrics */}
-      <SectionContainer title="Key Metrics">
-        <MetricsGrid metrics={keyMetrics} />
-      </SectionContainer>
+      {/* System Metrics Grid */}
+      <View style={globalStyles.metricsContainer}>
+        <Text style={globalStyles.sectionTitle}>System Overview</Text>
+        <View style={globalStyles.metricsGrid}>
+          {systemMetrics.map((metric, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                globalStyles.metricCard,
+                globalStyles.metricMediumContainer,
+                {
+                  flex: index < 2 ? 1 : index < 4 ? 1 : 1,
+                  marginRight: (index % 2 === 0) ? 8 : 0,
+                  marginLeft: (index % 2 === 1) ? 8 : 0,
+                  marginBottom: 16,
+                }
+              ]}
+              onPress={metric.onPress}
+            >
+              {/* Interactive Indicator */}
+              <View style={[
+                globalStyles.metricInteractiveIndicator,
+                { backgroundColor: metric.color }
+              ]}>
+                <Text style={globalStyles.metricArrowIcon}>→</Text>
+              </View>
 
-      {/* Service Overview */}
-      <SectionContainer title="Service Overview">
-        <MetricsGrid metrics={serviceMetrics} />
-      </SectionContainer>
+              {/* Header */}
+              <View style={globalStyles.metricCardHeader}>
+                <View style={[
+                  globalStyles.metricIconContainer,
+                  globalStyles.metricMediumIcon,
+                  { backgroundColor: metric.color + '20' }
+                ]}>
+                  <Text style={[
+                    globalStyles.metricIconText,
+                    globalStyles.metricMediumIconText,
+                    { color: metric.color }
+                  ]}>
+                    {metric.icon}
+                  </Text>
+                </View>
+                <View style={globalStyles.metricValueContainer}>
+                  {isLoading ? (
+                    <View style={[
+                      globalStyles.metricLoadingSkeleton,
+                      { backgroundColor: theme.colors.border }
+                    ]} />
+                  ) : (
+                    <Text style={[
+                      globalStyles.metricValue,
+                      globalStyles.metricMediumValue,
+                      { color: theme.colors.text }
+                    ]}>
+                      {metric.value}
+                    </Text>
+                  )}
+                </View>
+              </View>
 
-      {/* Urgent Services Alert */}
-      {renderUrgentServices()}
+              {/* Title */}
+              <Text style={[
+                globalStyles.metricTitle,
+                globalStyles.metricMediumTitle,
+                { color: theme.colors.text }
+              ]}>
+                {metric.title}
+              </Text>
 
-      {/* Pending Services */}
-      {renderPendingServices()}
+              {/* Trend */}
+              {metric.trend && (
+                <View style={globalStyles.metricTrendContainer}>
+                  <Text style={[
+                    globalStyles.metricTrend,
+                    globalStyles.metricMediumTrend,
+                    { color: metric.trendColor }
+                  ]}>
+                    {metric.trend}
+                  </Text>
+                </View>
+              )}
 
-      {/* System Health */}
-      {renderSystemHealth()}
+              {/* Accent Line */}
+              <View style={[
+                globalStyles.metricAccentLine,
+                { backgroundColor: metric.color }
+              ]} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Recent Users Section */}
+      <View style={globalStyles.section}>
+        <View style={globalStyles.sectionHeader}>
+          <Text style={globalStyles.sectionTitle}>Recent User Activity</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('UserManagement')}>
+            <Text style={[globalStyles.authFooterLink, { color: theme.colors.primary }]}>
+              View All Users
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {recentUsers.length > 0 ? (
+          recentUsers.map((user, index) => (
+            <TouchableOpacity
+              key={user.id}
+              style={globalStyles.adminUserCard}
+              onPress={() => navigation.navigate('UserDetails', { userId: user.id })}
+            >
+              <View style={globalStyles.adminUserHeader}>
+                <View style={[
+                  globalStyles.adminUserAvatar,
+                  { 
+                    backgroundColor: user.role === 'client' ? theme.colors.primary :
+                                   user.role === 'mechanic' ? theme.colors.success :
+                                   theme.colors.warning
+                  }
+                ]}>
+                  <Text style={globalStyles.adminUserAvatarText}>
+                    {user.name?.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={globalStyles.adminUserInfo}>
+                  <Text style={[globalStyles.adminUserName, { color: theme.colors.text }]}>
+                    {user.name}
+                  </Text>
+                  <Text style={[globalStyles.adminUserEmail, { color: theme.colors.textSecondary }]}>
+                    {user.email}
+                  </Text>
+                </View>
+                <View style={[
+                  globalStyles.adminUserRole,
+                  { 
+                    backgroundColor: user.role === 'client' ? theme.colors.primary :
+                                   user.role === 'mechanic' ? theme.colors.success :
+                                   theme.colors.warning
+                  }
+                ]}>
+                  <Text style={globalStyles.adminUserRoleText}>{user.role}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={globalStyles.emptyState}>
+            <Text style={globalStyles.emptyStateIcon}>👥</Text>
+            <Text style={globalStyles.emptyStateTitle}>No Users Yet</Text>
+            <Text style={globalStyles.emptyStateText}>
+              Users will appear here as they register on the platform.
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* System Alerts */}
+      <View style={globalStyles.section}>
+        <Text style={globalStyles.sectionTitle}>System Alerts</Text>
+        
+        <View style={[
+          globalStyles.card,
+          { backgroundColor: theme.colors.success + '10', borderColor: theme.colors.success }
+        ]}>
+          <View style={globalStyles.cardHeader}>
+            <Text style={[globalStyles.cardTitle, { color: theme.colors.success }]}>
+              ✅ All Systems Operational
+            </Text>
+          </View>
+          <Text style={[globalStyles.cardSubtitle, { color: theme.colors.text }]}>
+            All services are running normally. System health is at {systemStats.systemHealth}%.
+            Last maintenance: 2 days ago.
+          </Text>
+        </View>
+
+        <View style={[
+          globalStyles.card,
+          { backgroundColor: theme.colors.info + '10', borderColor: theme.colors.info }
+        ]}>
+          <View style={globalStyles.cardHeader}>
+            <Text style={[globalStyles.cardTitle, { color: theme.colors.info }]}>
+              📊 Daily Report Ready
+            </Text>
+          </View>
+          <Text style={[globalStyles.cardSubtitle, { color: theme.colors.text }]}>
+            Your daily system report is ready for review. 
+            {systemStats.dailyActiveUsers} active users today with {systemStats.activeServices} services in progress.
+          </Text>
+          <View style={globalStyles.cardActions}>
+            <TouchableOpacity style={[
+              globalStyles.buttonBase,
+              globalStyles.buttonSmall,
+              { backgroundColor: theme.colors.info }
+            ]}>
+              <Text style={globalStyles.buttonText}>View Report</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 };
 
-// Export with screen wrapper
-export default withScreenWrapper(AdminDashboard, {
-  layout: 'dashboard',
-  loading: true,
-  refresh: false // We handle refresh manually
-});
+export default AdminDashboard;

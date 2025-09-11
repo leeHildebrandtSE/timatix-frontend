@@ -1,10 +1,10 @@
-// src/styles/globalStyles.js - ENHANCED VERSION WITH ALL COMPONENT STYLES
+// src/styles/globalStyles.js - ENHANCED VERSION WITH ALL SCREEN-SPECIFIC STYLES
 import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
 // =============================================================================
-// DESIGN TOKENS
+// DESIGN TOKENS (Enhanced)
 // =============================================================================
 
 export const spacing = {
@@ -15,6 +15,7 @@ export const spacing = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+  xxxxl: 40,
 };
 
 export const sizing = {
@@ -23,6 +24,13 @@ export const sizing = {
   headerHeight: 64,
   cardPadding: 16,
   sectionSpacing: 32,
+  tabBarHeight: 70,
+  avatarSize: {
+    small: 32,
+    medium: 48,
+    large: 80,
+    xlarge: 120,
+  },
   borderRadius: {
     xs: 4,
     sm: 8,
@@ -30,6 +38,7 @@ export const sizing = {
     lg: 16,
     xl: 20,
     xxl: 24,
+    xxxl: 28,
   }
 };
 
@@ -65,7 +74,7 @@ export const shadows = {
 };
 
 // =============================================================================
-// COLOR SYSTEM
+// COLOR SYSTEM (Enhanced)
 // =============================================================================
 
 export const lightColors = {
@@ -321,6 +330,10 @@ export const getStatusColor = (status, colors) => {
     completed: colors.completed,
     cancelled: colors.cancelled,
     active: colors.primary,
+    'in-progress': colors.inProgress,
+    draft: colors.textSecondary,
+    published: colors.success,
+    archived: colors.textLight,
   };
   return statusColors[status?.toLowerCase()] || colors.textSecondary;
 };
@@ -356,6 +369,21 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+
+  // =============================================================================
+  // SCREEN LAYOUT STYLES
+  // =============================================================================
+  screenContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  screenScrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xxxxl,
+  },
+  screenRefreshControl: {
     backgroundColor: theme.colors.background,
   },
 
@@ -434,6 +462,241 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.xl,
+  },
+
+  // =============================================================================
+  // AUTH SCREEN STYLES
+  // =============================================================================
+  authContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+  },
+  authLogo: {
+    alignSelf: 'center',
+    marginBottom: spacing.xxxxl,
+  },
+  authLogoText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    textAlign: 'center',
+  },
+  authTitle: {
+    ...theme.typography.h2,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  authSubtitle: {
+    ...theme.typography.body1,
+    textAlign: 'center',
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.xxxxl,
+  },
+  authForm: {
+    gap: spacing.lg,
+    marginBottom: spacing.xxl,
+  },
+  authSubmitButton: {
+    marginTop: spacing.lg,
+  },
+  authDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.xxl,
+  },
+  authDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  authDividerText: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginHorizontal: spacing.lg,
+  },
+  authFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.xl,
+  },
+  authFooterText: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  authFooterLink: {
+    ...theme.typography.body2,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    marginLeft: spacing.xs,
+  },
+
+  // =============================================================================
+  // SPLASH SCREEN STYLES
+  // =============================================================================
+  splashContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  splashLogo: {
+    marginBottom: spacing.xxl,
+  },
+  splashLogoText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  splashTagline: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+    marginTop: spacing.lg,
+  },
+  splashAnimation: {
+    position: 'absolute',
+    bottom: spacing.xxxxl,
+  },
+
+  // =============================================================================
+  // PROFILE SCREEN STYLES
+  // =============================================================================
+  profileContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  profileHeader: {
+    backgroundColor: theme.colors.primary,
+    paddingTop: spacing.xxxxl,
+    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    borderBottomLeftRadius: sizing.borderRadius.xl,
+    borderBottomRightRadius: sizing.borderRadius.xl,
+  },
+  profileHeaderContent: {
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    width: sizing.avatarSize.xlarge,
+    height: sizing.avatarSize.xlarge,
+    borderRadius: sizing.avatarSize.xlarge / 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  profileAvatarImage: {
+    width: sizing.avatarSize.xlarge,
+    height: sizing.avatarSize.xlarge,
+    borderRadius: sizing.avatarSize.xlarge / 2,
+  },
+  profileAvatarIcon: {
+    fontSize: 48,
+    color: '#fff',
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: spacing.xs,
+  },
+  profileEmail: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: spacing.xs,
+  },
+  profileRole: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 16,
+  },
+  profileRoleText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  profileMenuSection: {
+    padding: spacing.xl,
+  },
+  profileMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  profileMenuItemLast: {
+    borderBottomWidth: 0,
+  },
+  profileMenuIcon: {
+    width: 24,
+    marginRight: spacing.lg,
+    textAlign: 'center',
+  },
+  profileMenuLabel: {
+    flex: 1,
+    ...theme.typography.body1,
+  },
+  profileMenuChevron: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+  },
+  profileLogoutButton: {
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.xl,
+    backgroundColor: theme.colors.error,
+  },
+
+  // =============================================================================
+  // DASHBOARD STYLES
+  // =============================================================================
+  dashboardContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  dashboardGradientHeader: {
+    backgroundColor: theme.colors.primary,
+    paddingTop: spacing.xxxxl,
+    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    borderBottomLeftRadius: sizing.borderRadius.xl,
+    borderBottomRightRadius: sizing.borderRadius.xl,
+    ...shadows.medium,
+  },
+  dashboardHeaderContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  dashboardGreeting: {
+    flex: 1,
+    marginRight: spacing.lg,
+  },
+  dashboardGreetingText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: spacing.xs,
+  },
+  dashboardGreetingSubtext: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 22,
+  },
+  dashboardProfileButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 24,
+    padding: spacing.sm,
+  },
+  dashboardProfileIcon: {
+    fontSize: 24,
+    color: '#fff',
   },
 
   // =============================================================================
@@ -907,12 +1170,195 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   },
 
   // =============================================================================
+  // LIST SCREEN STYLES
+  // =============================================================================
+  listContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  listHeaderContainer: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  listTitle: {
+    ...theme.typography.h3,
+    marginBottom: spacing.sm,
+  },
+  listSubtitle: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  listContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
+  listCount: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.sm,
+  },
+  listCountText: {
+    ...theme.typography.body2,
+    opacity: 0.7,
+  },
+  listEmptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxxxl,
+  },
+
+  // =============================================================================
+  // DETAILS SCREEN STYLES
+  // =============================================================================
+  detailsContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  detailsHeader: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  detailsTitle: {
+    ...theme.typography.h4,
+    marginBottom: spacing.xs,
+  },
+  detailsSubtitle: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  detailsSection: {
+    marginHorizontal: spacing.xl,
+    marginVertical: spacing.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.small,
+  },
+  detailsSectionTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.md,
+  },
+  detailsInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderLight,
+  },
+  detailsInfoRowLast: {
+    borderBottomWidth: 0,
+  },
+  detailsInfoLabel: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  detailsInfoValue: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+    flex: 2,
+    textAlign: 'right',
+  },
+  detailsImageContainer: {
+    height: 200,
+    borderRadius: sizing.borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+  detailsImage: {
+    width: '100%',
+    height: '100%',
+  },
+  detailsImagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+  },
+  detailsImagePlaceholderIcon: {
+    fontSize: 48,
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  detailsImagePlaceholderText: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  detailsActionsContainer: {
+    padding: spacing.xl,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  detailsActionButton: {
+    marginBottom: spacing.md,
+  },
+  detailsActionButtonLast: {
+    marginBottom: 0,
+  },
+
+  // =============================================================================
+  // FORM SCREEN STYLES
+  // =============================================================================
+  formContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  formScrollContent: {
+    paddingBottom: spacing.xxxxl * 2,
+  },
+  formSection: {
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+    borderRadius: sizing.borderRadius.lg,
+    padding: spacing.xl,
+    backgroundColor: theme.colors.surface,
+    ...shadows.small,
+  },
+  formSectionTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.xs,
+    fontWeight: 'bold',
+  },
+  formSectionSubtitle: {
+    ...theme.typography.body2,
+    opacity: 0.7,
+    marginBottom: spacing.lg,
+  },
+  formGroup: {
+    marginBottom: spacing.xl,
+  },
+  formSubmitButton: {
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.xl,
+    borderRadius: spacing.md,
+  },
+  formCancelButton: {
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.md,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+
+  // =============================================================================
   // INPUT STYLES
   // =============================================================================
   inputContainer: {
     marginBottom: spacing.lg,
   },
   inputLabel: {
+    ...theme.typography.label,
     marginBottom: 6,
   },
   inputRequired: {
@@ -977,6 +1423,8 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     height: sizing.inputHeight,
     backgroundColor: theme.colors.surface,
     borderColor: theme.colors.border,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
   },
   searchBarFocused: {
     borderColor: theme.colors.primary,
@@ -1166,10 +1614,12 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     flex: 1,
   },
   toastTitle: {
+    ...theme.typography.body1,
     marginBottom: 4,
     fontWeight: '600',
   },
   toastMessage: {
+    ...theme.typography.body2,
     lineHeight: 20,
   },
   toastCloseButton: {
@@ -1204,506 +1654,38 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   },
 
   // =============================================================================
-  // IMAGE PICKER STYLES
+  // EMPTY STATE STYLES
   // =============================================================================
-  imagePickerContainer: {
-    marginVertical: spacing.lg,
-  },
-  imagePickerTitle: {
-    marginBottom: spacing.md,
-  },
-  imagePickerScrollContainer: {
-    flexDirection: 'row',
-  },
-  imagePickerImageContainer: {
-    marginRight: spacing.md,
-  },
-  imagePickerImage: {
-    borderRadius: spacing.sm,
-  },
-  imagePickerAddButton: {
-    borderRadius: spacing.sm,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
+  emptyState: {
     backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-  },
-  imagePickerAddIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-    color: theme.colors.primary,
-  },
-  imagePickerAddText: {
-    textAlign: 'center',
-    color: theme.colors.textSecondary,
-  },
-
-  // =============================================================================
-  // PROFILE IMAGE PICKER MODAL STYLES
-  // =============================================================================
-  profileImagePickerModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  profileImagePickerModalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: spacing.xxl,
-    minHeight: '60%',
-    maxHeight: '80%',
-    backgroundColor: theme.colors.background,
-  },
-  profileImagePickerModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.xxxl * 1.5,
     alignItems: 'center',
-    marginBottom: spacing.xxl,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  profileImagePickerModalTitle: {
-    fontWeight: 'bold',
-  },
-  profileImagePickerCloseButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  profileImagePickerCloseButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.primary,
-  },
-  profileImagePickerPreviewSection: {
-    alignItems: 'center',
-    marginBottom: spacing.xxxl,
-  },
-  profileImagePickerImagePreviewContainer: {
-    position: 'relative',
-  },
-  profileImagePickerImagePreview: {
-    width: 200,
-    height: 200,
-    borderRadius: spacing.md,
-  },
-  profileImagePickerRemoveButton: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.error,
-  },
-  profileImagePickerRemoveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  profileImagePickerImagePlaceholder: {
-    width: 200,
-    height: 200,
-    borderRadius: spacing.md,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderColor: theme.colors.border,
-  },
-  profileImagePickerPlaceholderIcon: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
-    color: theme.colors.textSecondary,
-  },
-  profileImagePickerPlaceholderText: {
-    textAlign: 'center',
-    color: theme.colors.textSecondary,
-  },
-  profileImagePickerActionsContainer: {
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  profileImagePickerActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: spacing.md,
-    borderWidth: 1,
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-  },
-  profileImagePickerActionButtonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.lg,
-  },
-  profileImagePickerActionButtonIconText: {
-    fontSize: 20,
-  },
-  profileImagePickerActionButtonText: {
-    flex: 1,
-    fontWeight: '600',
-  },
-  profileImagePickerInfoText: {
-    textAlign: 'center',
-    lineHeight: 20,
-    opacity: 0.7,
-    color: theme.colors.textSecondary,
-  },
-
-  // =============================================================================
-  // PROGRESS TRACKER STYLES
-  // =============================================================================
-  progressTrackerContainer: {
-    paddingHorizontal: spacing.lg,
-  },
-  progressStepContainer: {
-    position: 'relative',
-  },
-  progressStepContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-  },
-  progressStepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.lg,
-  },
-  progressStepNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  progressStepTextContainer: {
-    flex: 1,
-  },
-  progressStepTitle: {
-    marginBottom: 2,
-  },
-  progressStepSubtitle: {
-    // Styles from theme
-  },
-  progressStepLine: {
-    position: 'absolute',
-    left: 15,
-    top: 48,
-    width: 2,
-    height: 32,
-  },
-
-  // =============================================================================
-  // FILTER CHIP STYLES (Enhanced version)
-  // =============================================================================
-  filterChipBase: {
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-  },
-  filterChipSmall: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 16,
-  },
-  filterChipMedium: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-  },
-  filterChipLarge: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: 24,
-  },
-  filterChipDefault: {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-  },
-  filterChipDefaultActive: {
-    backgroundColor: theme.colors.primary + '15',
-    borderColor: theme.colors.primary,
-  },
-  filterChipOutline: {
-    backgroundColor: 'transparent',
-    borderColor: theme.colors.border,
-  },
-  filterChipOutlineActive: {
-    backgroundColor: 'transparent',
-    borderColor: theme.colors.primary,
-    borderWidth: 2,
-  },
-  filterChipSolid: {
-    backgroundColor: theme.colors.textSecondary,
-    borderColor: theme.colors.textSecondary,
-  },
-  filterChipSolidActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterChipDisabled: {
-    opacity: 0.5,
-    backgroundColor: theme.colors.disabled,
-  },
-  filterChipTextBase: {
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  filterChipTextSmall: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  filterChipTextMedium: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  filterChipTextLarge: {
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  filterChipTextDefault: {
-    color: theme.colors.text,
-  },
-  filterChipTextDefaultActive: {
-    color: theme.colors.primary,
-  },
-  filterChipTextOutline: {
-    color: theme.colors.text,
-  },
-  filterChipTextOutlineActive: {
-    color: theme.colors.primary,
-  },
-  filterChipTextSolid: {
-    color: '#fff',
-  },
-  filterChipTextSolidActive: {
-    color: '#fff',
-  },
-  filterChipTextDisabled: {
-    color: theme.colors.textLight,
-  },
-  filterChipIconContainer: {
-    marginRight: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterChipIcon: {
-    fontSize: 16,
-  },
-  filterChipIconSmall: {
-    fontSize: 14,
-  },
-  filterChipIconLarge: {
-    fontSize: 18,
-  },
-  filterChipCountBadge: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    marginLeft: spacing.xs,
-    minWidth: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterChipCountBadgeSmall: {
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    minWidth: 16,
-  },
-  filterChipCountBadgeLarge: {
-    borderRadius: 12,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    minWidth: 22,
-  },
-  filterChipCountText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '600',
-    lineHeight: 13,
-  },
-  filterChipCountTextSmall: {
-    fontSize: 10,
-    lineHeight: 12,
-  },
-  filterChipCountTextLarge: {
-    fontSize: 12,
-    lineHeight: 14,
-  },
-  filterChipRemoveButton: {
-    marginLeft: spacing.xs,
-    padding: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterChipRemoveIcon: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    lineHeight: 12,
-  },
-  filterChipContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  filterChipPriorityUrgent: {
-    backgroundColor: theme.colors.error,
-    borderColor: theme.colors.error,
-  },
-  filterChipPriorityHigh: {
-    backgroundColor: '#FF8C00',
-    borderColor: '#FF8C00',
-  },
-  filterChipPriorityNormal: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterChipPriorityLow: {
-    backgroundColor: theme.colors.textSecondary,
-    borderColor: theme.colors.textSecondary,
-  },
-  filterChipStatusSuccess: {
-    backgroundColor: theme.colors.success + '15',
-    borderColor: theme.colors.success,
-  },
-  filterChipStatusWarning: {
-    backgroundColor: theme.colors.warning + '15',
-    borderColor: theme.colors.warning,
-  },
-  filterChipStatusError: {
-    backgroundColor: theme.colors.error + '15',
-    borderColor: theme.colors.error,
-  },
-  filterChipStatusInfo: {
-    backgroundColor: theme.colors.info + '15',
-    borderColor: theme.colors.info,
-  },
-
-  // =============================================================================
-  // FORM STYLES
-  // =============================================================================
-  formContainer: {
-    flex: 1,
-  },
-  formScrollContent: {
-    paddingBottom: spacing.xxxl * 2,
-  },
-  formSection: {
+    marginTop: 60,
     marginHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
-    borderRadius: sizing.borderRadius.lg,
-    padding: spacing.xl,
-    backgroundColor: theme.colors.surface,
-    ...shadows.small,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
   },
-  formSectionTitle: {
-    marginBottom: spacing.xs,
-    fontWeight: 'bold',
-  },
-  formSectionSubtitle: {
-    opacity: 0.7,
+  emptyStateIcon: {
+    fontSize: 48,
     marginBottom: spacing.lg,
-  },
-  formGroup: {
-    marginBottom: spacing.xl,
-  },
-  formSubmitButton: {
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.xl,
-    borderRadius: spacing.md,
-  },
-
-  // =============================================================================
-  // VEHICLE FORM SPECIFIC STYLES
-  // =============================================================================
-  vehicleFormImageContainer: {
-    height: 200,
-    borderRadius: spacing.md,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    overflow: 'hidden',
-    borderColor: theme.colors.border,
-  },
-  vehicleFormImageWrapper: {
-    flex: 1,
-    position: 'relative',
-  },
-  vehicleFormImage: {
-    width: '100%',
-    height: '100%',
-  },
-  vehicleFormImageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  vehicleFormImageOverlayText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  vehicleFormImagePlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vehicleFormPlaceholderIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
     color: theme.colors.textSecondary,
   },
-  vehicleFormPlaceholderText: {
-    fontWeight: '600',
-    marginBottom: 4,
-    color: theme.colors.textSecondary,
+  emptyStateTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
   },
-  vehicleFormPlaceholderSubtext: {
-    opacity: 0.7,
-    color: theme.colors.textSecondary,
+  emptyStateText: {
+    ...theme.typography.body2,
+    textAlign: 'center',
+    opacity: 0.6,
+    marginBottom: spacing.xxl,
+    lineHeight: 20,
   },
-  vehicleFormSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-  },
-  vehicleFormSelectorText: {
-    flex: 1,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  vehicleFormSelectorTextPlaceholder: {
-    color: theme.colors.placeholder,
-  },
-  vehicleFormChevron: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+  emptyStateButton: {
+    paddingHorizontal: spacing.xxl,
   },
 
   // =============================================================================
@@ -1758,6 +1740,7 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   modalOptionText: {
+    ...theme.typography.body1,
     flex: 1,
   },
   modalOptionTextSelected: {
@@ -1768,129 +1751,6 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: theme.colors.primary,
-  },
-
-  // =============================================================================
-  // EMPTY STATE STYLES
-  // =============================================================================
-  emptyState: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: sizing.borderRadius.md,
-    padding: spacing.xxxl * 1.5,
-    alignItems: 'center',
-    marginTop: 60,
-    marginHorizontal: spacing.xl,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderStyle: 'dashed',
-  },
-  emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: spacing.lg,
-  },
-  emptyStateTitle: {
-    ...theme.typography.h6,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptyStateText: {
-    ...theme.typography.body2,
-    textAlign: 'center',
-    opacity: 0.6,
-    marginBottom: spacing.xxl,
-    lineHeight: 20,
-  },
-  emptyStateButton: {
-    paddingHorizontal: spacing.xxl,
-  },
-
-  // =============================================================================
-  // ERROR BOUNDARY STYLES
-  // =============================================================================
-  errorBoundaryContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-    backgroundColor: '#F5F5F5',
-  },
-  errorBoundaryCard: {
-    backgroundColor: '#FFFFFF',
-    padding: spacing.xxl,
-    borderRadius: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    maxWidth: 350,
-    ...shadows.medium,
-  },
-  errorBoundaryIcon: {
-    fontSize: 48,
-    marginBottom: spacing.lg,
-  },
-  errorBoundaryTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  errorBoundaryMessage: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: spacing.xxl,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  errorBoundaryDebugInfo: {
-    width: '100%',
-    marginBottom: spacing.xl,
-    padding: spacing.md,
-    backgroundColor: '#F8F9FA',
-    borderRadius: spacing.sm,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  errorBoundaryDebugTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#495057',
-    marginBottom: spacing.sm,
-  },
-  errorBoundaryDebugText: {
-    fontSize: 12,
-    color: '#6C757D',
-    fontFamily: 'monospace',
-    maxHeight: 100,
-  },
-  errorBoundaryRetryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.md,
-    borderRadius: spacing.sm,
-    marginBottom: spacing.md,
-    minWidth: 120,
-  },
-  errorBoundaryRetryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  errorBoundaryReloadButton: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.sm,
-    borderRadius: spacing.sm,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    minWidth: 120,
-  },
-  errorBoundaryReloadButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
   },
 
   // =============================================================================
@@ -1957,25 +1817,6 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   },
 
   // =============================================================================
-  // LIST STYLES
-  // =============================================================================
-  listContainer: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
-  },
-  listCount: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.sm,
-  },
-  listCountText: {
-    ...theme.typography.body2,
-    opacity: 0.7,
-  },
-
-  // =============================================================================
   // FILTER STYLES
   // =============================================================================
   filtersContainer: {
@@ -2025,35 +1866,52 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  filterResults: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm,
-    backgroundColor: theme.colors.info + '10',
-    borderRadius: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  filterResultsText: {
-    color: theme.colors.info,
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  quickFilters: {
+
+  // =============================================================================
+  // FILTER CHIP STYLES
+  // =============================================================================
+  filterChipBase: {
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     flexDirection: 'row',
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
+    alignSelf: 'flex-start',
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
-  quickFilterButton: {
-    backgroundColor: theme.colors.primary,
+  filterChipSmall: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 16,
+  },
+  filterChipMedium: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: 20,
-    marginRight: spacing.sm,
   },
-  quickFilterButtonText: {
-    color: '#fff',
+  filterChipLarge: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: 24,
+  },
+  filterChipDefault: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+  },
+  filterChipDefaultActive: {
+    backgroundColor: theme.colors.primary + '15',
+    borderColor: theme.colors.primary,
+  },
+  filterChipText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
+    color: theme.colors.text,
+  },
+  filterChipTextActive: {
+    color: theme.colors.primary,
   },
 
   // =============================================================================
@@ -2125,260 +1983,950 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   },
 
   // =============================================================================
-  // AUTH DEBUG STYLES
+  // ADMIN SPECIFIC STYLES
   // =============================================================================
-  authDebuggerContainer: {
-    padding: spacing.xl,
-    backgroundColor: '#f5f5f5',
-    borderRadius: spacing.sm,
-    margin: spacing.xl,
+  adminDashboardContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  authDebuggerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
+  adminMetricsSection: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: sizing.sectionSpacing,
   },
-  authDebuggerButtonContainer: {
+  adminMetricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 15,
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
-  authDebuggerButton: {
-    backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 6,
-    flex: 1,
-    minWidth: '45%',
+  adminUserCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.small,
   },
-  authDebuggerDangerButton: {
-    backgroundColor: '#FF3B30',
+  adminUserHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  authDebuggerButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '600',
+  adminUserAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
-  authDebuggerResultContainer: {
-    backgroundColor: '#2c2c2c',
-    padding: 10,
-    borderRadius: 6,
-    maxHeight: 300,
-  },
-  authDebuggerResultText: {
+  adminUserAvatarText: {
     color: '#fff',
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-
-  // =============================================================================
-  // ERROR DEBUGGER STYLES
-  // =============================================================================
-  errorDebuggerContainer: {
-    padding: spacing.xl,
-    backgroundColor: '#e8f4fd',
-    margin: 10,
-    borderRadius: spacing.sm,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-  },
-  errorDebuggerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-    color: '#007AFF',
   },
-  errorDebuggerText: {
-    fontSize: 14,
-    marginVertical: 2,
-    color: '#333',
+  adminUserInfo: {
+    flex: 1,
   },
-
-  // =============================================================================
-  // FORCE LOGOUT STYLES
-  // =============================================================================
-  forceLogoutContainer: {
-    padding: spacing.xl,
-    backgroundColor: '#f0f0f0',
-    margin: 10,
-    borderRadius: spacing.sm,
-    borderWidth: 2,
-    borderColor: '#ddd',
+  adminUserName: {
+    ...theme.typography.h6,
+    marginBottom: 2,
   },
-  forceLogoutTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
-    color: '#333',
+  adminUserEmail: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
   },
-  forceLogoutButton: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 6,
-    marginVertical: 5,
+  adminUserRole: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
-  forceLogoutButtonLogout: {
-    backgroundColor: '#FF3B30',
-  },
-  forceLogoutButtonText: {
-    color: 'white',
-    textAlign: 'center',
+  adminUserRoleText: {
+    color: '#fff',
+    fontSize: 11,
     fontWeight: '600',
-  },
-  forceLogoutInfo: {
-    marginTop: 15,
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 6,
-  },
-  forceLogoutInfoText: {
-    fontSize: 12,
-    color: '#666',
-    marginVertical: 2,
+    textTransform: 'capitalize',
   },
 
   // =============================================================================
-  // TOUCHABLE CONTAINER STYLES
+  // MECHANIC SPECIFIC STYLES
   // =============================================================================
-  touchableContainer: {
-    // Base container for touchable elements
+  mechanicJobCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.card,
   },
-  touchableOpacity: {
-    // Default touchable opacity
+  mechanicJobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
-  touchableHighlight: {
-    // Default touchable highlight
+  mechanicJobInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  mechanicJobTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.xs,
+  },
+  mechanicJobClient: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  mechanicJobVehicle: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  mechanicJobPriority: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  mechanicJobPriorityText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  mechanicJobDetails: {
+    marginBottom: spacing.md,
+  },
+  mechanicJobDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  mechanicJobDetailLabel: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  mechanicJobDetailValue: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  mechanicJobActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
 
   // =============================================================================
-  // ACCESSIBILITY STYLES
+  // QUOTE MANAGEMENT STYLES
   // =============================================================================
-  accessibilityFocused: {
-    borderWidth: 2,
+  quoteCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.card,
+  },
+  quoteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  quoteInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  quoteNumber: {
+    ...theme.typography.h6,
+    marginBottom: spacing.xs,
+  },
+  quoteClient: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  quoteVehicle: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  quoteAmount: {
+    ...theme.typography.h5,
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  quoteStatus: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
+  },
+  quoteStatusText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  quoteDetails: {
+    marginBottom: spacing.md,
+  },
+  quoteDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  quoteDetailLabel: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  quoteDetailValue: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  quoteActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+
+  // =============================================================================
+  // CLIENT SPECIFIC STYLES
+  // =============================================================================
+  clientVehicleCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  clientVehicleImage: {
+    height: 140,
+    backgroundColor: theme.colors.surface,
+  },
+  clientVehicleImagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clientVehicleImagePlaceholderIcon: {
+    fontSize: 48,
+    color: theme.colors.textSecondary,
+  },
+  clientVehicleContent: {
+    padding: spacing.lg,
+  },
+  clientVehicleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  clientVehicleInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  clientVehicleName: {
+    ...theme.typography.h6,
+    marginBottom: spacing.xs,
+  },
+  clientVehicleDetails: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  clientVehicleActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  clientVehicleActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clientVehicleActionIcon: {
+    fontSize: 16,
+    color: '#fff',
+  },
+
+  // =============================================================================
+  // SERVICE REQUEST STYLES
+  // =============================================================================
+  serviceRequestCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    position: 'relative',
+    ...shadows.card,
+  },
+  serviceRequestHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  serviceRequestInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  serviceRequestTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.xs,
+  },
+  serviceRequestVehicle: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  serviceRequestDate: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  serviceRequestStatus: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  serviceRequestStatusText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  serviceRequestDescription: {
+    ...theme.typography.body2,
+    marginBottom: spacing.md,
+    lineHeight: 20,
+  },
+  serviceRequestProgress: {
+    marginBottom: spacing.md,
+  },
+  serviceRequestProgressBar: {
+    height: 4,
+    backgroundColor: theme.colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: spacing.xs,
+  },
+  serviceRequestProgressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+  },
+  serviceRequestProgressText: {
+    ...theme.typography.caption,
+    textAlign: 'center',
+  },
+  serviceRequestActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  serviceRequestStatusAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+
+  // =============================================================================
+  // VEHICLE DETAILS STYLES
+  // =============================================================================
+  vehicleDetailsContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  vehicleDetailsImage: {
+    height: 240,
+    backgroundColor: theme.colors.surface,
+  },
+  vehicleDetailsImagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vehicleDetailsImagePlaceholderIcon: {
+    fontSize: 64,
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  vehicleDetailsImagePlaceholderText: {
+    ...theme.typography.body1,
+    color: theme.colors.textSecondary,
+  },
+  vehicleDetailsContent: {
+    flex: 1,
+    padding: spacing.xl,
+  },
+  vehicleDetailsHeader: {
+    marginBottom: spacing.xxl,
+  },
+  vehicleDetailsTitle: {
+    ...theme.typography.h3,
+    marginBottom: spacing.xs,
+  },
+  vehicleDetailsSubtitle: {
+    ...theme.typography.body1,
+    color: theme.colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  vehicleDetailsLicensePlate: {
+    backgroundColor: theme.colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: sizing.borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  vehicleDetailsLicensePlateText: {
+    ...theme.typography.body2,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  vehicleDetailsInfoSection: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  vehicleDetailsInfoTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.md,
+  },
+  vehicleDetailsInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderLight,
+  },
+  vehicleDetailsInfoRowLast: {
+    borderBottomWidth: 0,
+  },
+  vehicleDetailsInfoLabel: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  vehicleDetailsInfoValue: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  vehicleDetailsActions: {
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
+
+  // =============================================================================
+  // CREATE SERVICE REQUEST STYLES
+  // =============================================================================
+  createServiceContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  createServiceForm: {
+    padding: spacing.xl,
+  },
+  createServiceSection: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  createServiceSectionTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.md,
+  },
+  createServiceVehicleSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: sizing.borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  createServiceVehicleSelectorText: {
+    ...theme.typography.body1,
+    flex: 1,
+  },
+  createServiceVehicleSelectorPlaceholder: {
+    color: theme.colors.placeholder,
+  },
+  createServiceVehicleSelectorChevron: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+  },
+  createServicePriorityContainer: {
+    marginBottom: spacing.lg,
+  },
+  createServicePriorityLabel: {
+    ...theme.typography.label,
+    marginBottom: spacing.sm,
+  },
+  createServicePriorityOptions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  createServicePriorityOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: sizing.borderRadius.sm,
+    alignItems: 'center',
+  },
+  createServicePriorityOptionActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '15',
+  },
+  createServicePriorityOptionText: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+  },
+  createServicePriorityOptionTextActive: {
+    color: theme.colors.primary,
+  },
+  createServiceSubmitButton: {
+    marginTop: spacing.xxl,
+  },
+
+  // =============================================================================
+  // SYSTEM OVERVIEW STYLES (Admin)
+  // =============================================================================
+  systemOverviewContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  systemStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginBottom: sizing.sectionSpacing,
+  },
+  systemStatCard: {
+    flex: 1,
+    minWidth: '47%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.small,
+  },
+  systemStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  systemStatIconText: {
+    fontSize: 20,
+    color: '#fff',
+  },
+  systemStatValue: {
+    ...theme.typography.h4,
+    fontWeight: 'bold',
+    marginBottom: spacing.xs,
+  },
+  systemStatLabel: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  systemChartsSection: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: sizing.sectionSpacing,
+  },
+  systemChartCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.small,
+  },
+  systemChartTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.lg,
+  },
+
+  // =============================================================================
+  // USER MANAGEMENT STYLES (Admin)
+  // =============================================================================
+  userManagementContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  userFiltersContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  userFilterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginRight: spacing.sm,
+  },
+  userFilterChipActive: {
+    backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
-  accessibilityLabel: {
-    // Screen reader optimized text
+  userFilterChipText: {
+    ...theme.typography.body2,
+    fontWeight: '500',
   },
-  accessibilityHint: {
-    // Screen reader hint text
+  userFilterChipTextActive: {
+    color: '#fff',
+  },
+  userListContainer: {
+    paddingHorizontal: spacing.xl,
+  },
+  userListItem: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.small,
+  },
+  userListItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  userListItemAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  userListItemAvatarText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  userListItemInfo: {
+    flex: 1,
+  },
+  userListItemName: {
+    ...theme.typography.h6,
+    marginBottom: 2,
+  },
+  userListItemEmail: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  },
+  userListItemRole: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  userListItemRoleText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  userListItemStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.borderLight,
+  },
+  userListItemStat: {
+    alignItems: 'center',
+  },
+  userListItemStatValue: {
+    ...theme.typography.h6,
+    fontWeight: 'bold',
+  },
+  userListItemStatLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
   },
 
   // =============================================================================
-  // RESPONSIVE BREAKPOINT STYLES
+  // JOB DETAILS STYLES
   // =============================================================================
-  smallScreenOnly: responsive.isSmallScreen ? {} : { display: 'none' },
-  mediumScreenOnly: responsive.isMediumScreen ? {} : { display: 'none' },
-  largeScreenOnly: responsive.isLargeScreen ? {} : { display: 'none' },
-  
-  // =============================================================================
-  // ANIMATION STYLES
-  // =============================================================================
-  fadeIn: {
-    opacity: 1,
+  jobDetailsContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  fadeOut: {
-    opacity: 0,
+  jobDetailsHeader: {
+    backgroundColor: theme.colors.surface,
+    padding: spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  slideInLeft: {
-    transform: [{ translateX: 0 }],
+  jobDetailsTitle: {
+    ...theme.typography.h4,
+    marginBottom: spacing.xs,
   },
-  slideInRight: {
-    transform: [{ translateX: 0 }],
+  jobDetailsSubtitle: {
+    ...theme.typography.body1,
+    color: theme.colors.textSecondary,
   },
-  slideOutLeft: {
-    transform: [{ translateX: -width }],
+  jobDetailsStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
   },
-  slideOutRight: {
-    transform: [{ translateX: width }],
+  jobDetailsStatus: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 16,
+    marginRight: spacing.md,
   },
-  scaleUp: {
-    transform: [{ scale: 1.1 }],
+  jobDetailsStatusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
-  scaleDown: {
-    transform: [{ scale: 0.9 }],
+  jobDetailsPriority: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 16,
   },
-  rotate90: {
-    transform: [{ rotate: '90deg' }],
+  jobDetailsPriorityText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
-  rotate180: {
-    transform: [{ rotate: '180deg' }],
+  jobDetailsContent: {
+    flex: 1,
+    padding: spacing.xl,
   },
-  rotate270: {
-    transform: [{ rotate: '270deg' }],
+  jobDetailsSection: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  jobDetailsSectionTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.md,
+  },
+  jobDetailsInfoGrid: {
+    gap: spacing.md,
+  },
+  jobDetailsInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  jobDetailsInfoLabel: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  jobDetailsInfoValue: {
+    ...theme.typography.body2,
+    fontWeight: '500',
+    flex: 2,
+    textAlign: 'right',
+  },
+  jobDetailsDescription: {
+    ...theme.typography.body1,
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+  jobDetailsNotes: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+  jobDetailsActions: {
+    gap: spacing.md,
+    marginTop: spacing.xl,
   },
 
   // =============================================================================
-  // PLATFORM SPECIFIC STYLES
+  // CREATE QUOTE STYLES
   // =============================================================================
-  iosOnly: Platform.OS === 'ios' ? {} : { display: 'none' },
-  androidOnly: Platform.OS === 'android' ? {} : { display: 'none' },
-  webOnly: Platform.OS === 'web' ? {} : { display: 'none' },
-
-  // =============================================================================
-  // Z-INDEX LAYERS
-  // =============================================================================
-  zIndexBase: { zIndex: 1 },
-  zIndexDropdown: { zIndex: 1000 },
-  zIndexStickyHeader: { zIndex: 1001 },
-  zIndexModal: { zIndex: 1002 },
-  zIndexPopover: { zIndex: 1003 },
-  zIndexTooltip: { zIndex: 1004 },
-  zIndexNotification: { zIndex: 1005 },
-  zIndexMax: { zIndex: 9999 },
-
-  // =============================================================================
-  // POSITION UTILITIES
-  // =============================================================================
-  positionAbsolute: { position: 'absolute' },
-  positionRelative: { position: 'relative' },
-  positionFixed: { position: 'fixed' },
-  
-  // Absolute positioning helpers
-  absoluteFill: StyleSheet.absoluteFillObject,
-  absoluteTop: { position: 'absolute', top: 0, left: 0, right: 0 },
-  absoluteBottom: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  absoluteLeft: { position: 'absolute', left: 0, top: 0, bottom: 0 },
-  absoluteRight: { position: 'absolute', right: 0, top: 0, bottom: 0 },
-  absoluteCenter: { 
-    position: 'absolute', 
-    top: '50%', 
-    left: '50%', 
-    transform: [{ translateX: -50 }, { translateY: -50 }] 
+  createQuoteContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  absoluteTopLeft: { position: 'absolute', top: 0, left: 0 },
-  absoluteTopRight: { position: 'absolute', top: 0, right: 0 },
-  absoluteBottomLeft: { position: 'absolute', bottom: 0, left: 0 },
-  absoluteBottomRight: { position: 'absolute', bottom: 0, right: 0 },
+  createQuoteForm: {
+    padding: spacing.xl,
+  },
+  createQuoteSection: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  createQuoteSectionTitle: {
+    ...theme.typography.h6,
+    marginBottom: spacing.md,
+  },
+  createQuoteItemsContainer: {
+    marginBottom: spacing.lg,
+  },
+  createQuoteItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderLight,
+  },
+  createQuoteItemDescription: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  createQuoteItemDescriptionInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: sizing.borderRadius.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontSize: 14,
+  },
+  createQuoteItemQuantity: {
+    width: 60,
+    marginRight: spacing.sm,
+  },
+  createQuoteItemQuantityInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: sizing.borderRadius.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  createQuoteItemPrice: {
+    width: 80,
+    marginRight: spacing.sm,
+  },
+  createQuoteItemPriceInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: sizing.borderRadius.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontSize: 14,
+    textAlign: 'right',
+  },
+  createQuoteItemTotal: {
+    width: 80,
+    alignItems: 'flex-end',
+  },
+  createQuoteItemTotalText: {
+    ...theme.typography.body2,
+    fontWeight: 'bold',
+  },
+  createQuoteItemRemove: {
+    padding: spacing.xs,
+    marginLeft: spacing.sm,
+  },
+  createQuoteItemRemoveIcon: {
+    fontSize: 16,
+    color: theme.colors.error,
+  },
+  createQuoteAddItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
+    borderRadius: sizing.borderRadius.sm,
+    marginTop: spacing.md,
+  },
+  createQuoteAddItemIcon: {
+    fontSize: 16,
+    color: theme.colors.primary,
+    marginRight: spacing.sm,
+  },
+  createQuoteAddItemText: {
+    ...theme.typography.body2,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
+  createQuoteTotalSection: {
+    backgroundColor: theme.colors.primary + '10',
+    borderRadius: sizing.borderRadius.sm,
+    padding: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  createQuoteTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  createQuoteTotalRowLast: {
+    marginBottom: 0,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  createQuoteTotalLabel: {
+    ...theme.typography.body1,
+    fontWeight: '500',
+  },
+  createQuoteTotalValue: {
+    ...theme.typography.body1,
+    fontWeight: 'bold',
+  },
+  createQuoteTotalGrandTotal: {
+    ...theme.typography.h5,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  createQuoteSubmitButton: {
+    marginTop: spacing.xxl,
+  },
 
   // =============================================================================
-  // OVERFLOW UTILITIES
-  // =============================================================================
-  overflowHidden: { overflow: 'hidden' },
-  overflowVisible: { overflow: 'visible' },
-  overflowScroll: { overflow: 'scroll' },
-
-  // =============================================================================
-  // OPACITY UTILITIES
-  // =============================================================================
-  opacity0: { opacity: 0 },
-  opacity10: { opacity: 0.1 },
-  opacity20: { opacity: 0.2 },
-  opacity30: { opacity: 0.3 },
-  opacity40: { opacity: 0.4 },
-  opacity50: { opacity: 0.5 },
-  opacity60: { opacity: 0.6 },
-  opacity70: { opacity: 0.7 },
-  opacity80: { opacity: 0.8 },
-  opacity90: { opacity: 0.9 },
-  opacity100: { opacity: 1 },
-
-  // =============================================================================
-  // MARGIN UTILITIES
+  // RESPONSIVE MARGIN/PADDING UTILITIES
   // =============================================================================
   marginXS: { margin: spacing.xs },
   marginSM: { margin: spacing.sm },
@@ -2420,9 +2968,6 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   marginVerticalXXL: { marginVertical: spacing.xxl },
   marginVerticalXXXL: { marginVertical: spacing.xxxl },
 
-  // =============================================================================
-  // PADDING UTILITIES
-  // =============================================================================
   paddingXS: { padding: spacing.xs },
   paddingSM: { padding: spacing.sm },
   paddingMD: { padding: spacing.md },
@@ -2520,6 +3065,74 @@ export const createGlobalStyles = (theme) => StyleSheet.create({
   minHeightFull: { minHeight: '100%' },
   maxHeight0: { maxHeight: 0 },
   maxHeightFull: { maxHeight: '100%' },
+
+  // =============================================================================
+  // POSITION UTILITIES
+  // =============================================================================
+  positionAbsolute: { position: 'absolute' },
+  positionRelative: { position: 'relative' },
+  positionFixed: { position: 'fixed' },
+  
+  absoluteFill: StyleSheet.absoluteFillObject,
+  absoluteTop: { position: 'absolute', top: 0, left: 0, right: 0 },
+  absoluteBottom: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  absoluteLeft: { position: 'absolute', left: 0, top: 0, bottom: 0 },
+  absoluteRight: { position: 'absolute', right: 0, top: 0, bottom: 0 },
+  absoluteCenter: { 
+    position: 'absolute', 
+    top: '50%', 
+    left: '50%', 
+    transform: [{ translateX: -50 }, { translateY: -50 }] 
+  },
+  absoluteTopLeft: { position: 'absolute', top: 0, left: 0 },
+  absoluteTopRight: { position: 'absolute', top: 0, right: 0 },
+  absoluteBottomLeft: { position: 'absolute', bottom: 0, left: 0 },
+  absoluteBottomRight: { position: 'absolute', bottom: 0, right: 0 },
+
+  // =============================================================================
+  // Z-INDEX UTILITIES
+  // =============================================================================
+  zIndexBase: { zIndex: 1 },
+  zIndexDropdown: { zIndex: 1000 },
+  zIndexStickyHeader: { zIndex: 1001 },
+  zIndexModal: { zIndex: 1002 },
+  zIndexPopover: { zIndex: 1003 },
+  zIndexTooltip: { zIndex: 1004 },
+  zIndexNotification: { zIndex: 1005 },
+  zIndexMax: { zIndex: 9999 },
+
+  // =============================================================================
+  // OPACITY UTILITIES
+  // =============================================================================
+  opacity0: { opacity: 0 },
+  opacity10: { opacity: 0.1 },
+  opacity20: { opacity: 0.2 },
+  opacity30: { opacity: 0.3 },
+  opacity40: { opacity: 0.4 },
+  opacity50: { opacity: 0.5 },
+  opacity60: { opacity: 0.6 },
+  opacity70: { opacity: 0.7 },
+  opacity80: { opacity: 0.8 },
+  opacity90: { opacity: 0.9 },
+  opacity100: { opacity: 1 },
+
+  // =============================================================================
+  // OVERFLOW UTILITIES
+  // =============================================================================
+  overflowHidden: { overflow: 'hidden' },
+  overflowVisible: { overflow: 'visible' },
+  overflowScroll: { overflow: 'scroll' },
+
+  // =============================================================================
+  // DEBUGGING STYLES
+  // =============================================================================
+  debugBorder: {
+    borderWidth: 1,
+    borderColor: 'red',
+  },
+  debugBackground: {
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+  },
 });
 
 // =============================================================================
@@ -2584,6 +3197,216 @@ export const mixins = {
   whenIOS: (styles) => Platform.OS === 'ios' ? styles : {},
   whenAndroid: (styles) => Platform.OS === 'android' ? styles : {},
   whenWeb: (styles) => Platform.OS === 'web' ? styles : {},
+
+  // Status color helper
+  statusColor: (status, colors) => getStatusColor(status, colors),
+  priorityColor: (priority, colors) => getPriorityColor(priority, colors),
+
+  // Common card style
+  card: (theme) => ({
+    backgroundColor: theme.colors.surface,
+    borderRadius: sizing.borderRadius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...shadows.card,
+  }),
+
+  // Common button style
+  button: (variant = 'primary', theme) => {
+    const variants = {
+      primary: {
+        backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
+      },
+      secondary: {
+        backgroundColor: 'transparent',
+        borderColor: theme.colors.primary,
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        borderColor: theme.colors.border,
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+      },
+      danger: {
+        backgroundColor: theme.colors.error,
+        borderColor: theme.colors.error,
+      },
+    };
+    
+    return {
+      borderRadius: spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
+      minHeight: sizing.inputHeight,
+      borderWidth: 1,
+      ...variants[variant],
+    };
+  },
+
+  // Common input style
+  input: (theme, focused = false, error = false) => ({
+    borderWidth: focused ? 2 : 1,
+    borderColor: error ? theme.colors.error : 
+                 focused ? theme.colors.primary : theme.colors.border,
+    borderRadius: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: theme.colors.surface,
+    fontSize: 16,
+    color: theme.colors.text,
+    minHeight: sizing.inputHeight,
+  }),
+};
+
+// =============================================================================
+// COMPONENT STYLE GENERATORS
+// =============================================================================
+
+export const generateComponentStyles = {
+  // Status badge generator
+  statusBadge: (status, theme, size = 'medium') => {
+    const backgroundColor = getStatusColor(status, theme.colors);
+    const sizes = {
+      small: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        fontSize: 10,
+      },
+      medium: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 12,
+        fontSize: 12,
+      },
+      large: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: 6,
+        borderRadius: 16,
+        fontSize: 14,
+      },
+    };
+    
+    return {
+      backgroundColor,
+      alignSelf: 'flex-start',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...sizes[size],
+    };
+  },
+
+  // Priority badge generator
+  priorityBadge: (priority, theme, size = 'medium') => {
+    const backgroundColor = getPriorityColor(priority, theme.colors);
+    const sizes = {
+      small: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        fontSize: 10,
+      },
+      medium: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 12,
+        fontSize: 12,
+      },
+      large: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: 6,
+        borderRadius: 16,
+        fontSize: 14,
+      },
+    };
+    
+    return {
+      backgroundColor,
+      alignSelf: 'flex-start',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...sizes[size],
+    };
+  },
+
+  // Metric card generator
+  metricCard: (theme, size = 'medium', interactive = false) => {
+    const sizes = {
+      small: {
+        padding: spacing.md,
+        minHeight: 100,
+        iconSize: 32,
+        valueSize: 20,
+        titleSize: 12,
+      },
+      medium: {
+        padding: spacing.lg,
+        minHeight: 120,
+        iconSize: 40,
+        valueSize: 24,
+        titleSize: 14,
+      },
+      large: {
+        padding: spacing.xl,
+        minHeight: 140,
+        iconSize: 48,
+        valueSize: 32,
+        titleSize: 16,
+      },
+    };
+    
+    return {
+      backgroundColor: theme.colors.surface,
+      borderRadius: sizing.borderRadius.lg,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      position: 'relative',
+      overflow: 'hidden',
+      ...shadows.card,
+      ...sizes[size],
+      ...(interactive && { transform: [{ scale: 1 }] }),
+    };
+  },
+};
+
+// =============================================================================
+// THEME INTEGRATION HELPERS
+// =============================================================================
+
+export const themeIntegration = {
+  // Get themed colors
+  getThemedColors: (isDark) => isDark ? darkColors : lightColors,
+  
+  // Get themed typography
+  getThemedTypography: (isDark) => createTypography(isDark),
+  
+  // Get themed global styles
+  getThemedGlobalStyles: (theme) => createGlobalStyles(theme),
+  
+  // Create complete theme object
+  createTheme: (isDark = false) => {
+    const colors = isDark ? darkColors : lightColors;
+    const typography = createTypography(isDark);
+    
+    return {
+      isDark,
+      colors,
+      typography,
+      spacing,
+      sizing,
+      shadows,
+      layout,
+      responsive,
+      mixins,
+      generateComponentStyles,
+    };
+  },
 };
 
 // =============================================================================
@@ -2601,6 +3424,8 @@ export default {
   createGlobalStyles,
   responsive,
   mixins,
+  generateComponentStyles,
+  themeIntegration,
   getStatusColor,
   getPriorityColor,
 };
